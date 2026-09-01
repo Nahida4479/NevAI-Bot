@@ -26,16 +26,18 @@ client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'ai') {
+        const data = loadData()
+        const langCode = data[interaction.guildId]?.language || 'EN';
+        const lang = loadLanguage(langCode);
+
         if (!interaction.memberPermissions.has('Administrator')) {
-            await interaction.reply({ content: 'Only administrator can use this command.', flags: MessageFlags.Ephemeral });
+            await interaction.reply({ content: lang.onlyOwner, flags: MessageFlags.Ephemeral });
             return;
         }
 
         const channel = interaction.options.getChannel('channel');
 
         if (channel) {
-            const data = loadData()
-
             if (!data[interaction.guildId]) {
                 data[interaction.guildId] = {};
             }
@@ -43,11 +45,11 @@ client.on('interactionCreate', async (interaction) => {
             if(data[interaction.guildId].channel === channel.id) {
                 delete data[interaction.guildId].channel;
                 saveData(data);
-                await interaction.reply({ content: `AI channel removed ${channel}`, flags: MessageFlags.Ephemeral});
+                await interaction.reply({ content: `${lang.aiChannelRemoved} ${channel}`, flags: MessageFlags.Ephemeral});
             } else {
                 data[interaction.guildId].channel = channel.id;
                 saveData(data);
-                await interaction.reply({ content: `AI channel set to ${channel}`, flags: MessageFlags.Ephemeral });
+                await interaction.reply({ content: `${lang.aiChannelSet} ${channel}`, flags: MessageFlags.Ephemeral });
             }
         }
     }
