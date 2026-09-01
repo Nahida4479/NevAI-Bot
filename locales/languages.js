@@ -16,7 +16,7 @@ const languageCommand = new SlashCommandBuilder()
             .setDescription('Set bot language')
             .setRequired(true)
             .addChoices(
-                { name: 'English', value: 'EN' },
+                { name: 'English (default)', value: 'EN' },
                 { name: 'Polish', value: 'PL' }
             )
     )
