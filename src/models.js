@@ -91,6 +91,5 @@ async function getAiResponse(messages) {
     throw new Error(`All AI providers failed`);
 }
 
-getAiResponse([{ role: 'user', content: 'Say hello' }])
-    .then(response => console.log('Final response:', response))
-    .catch(error => console.log('Everything failed:', error));
+
+export {getAiResponse};
