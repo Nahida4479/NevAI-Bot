@@ -20,6 +20,7 @@
   "dependencies": {
     "discord.js": "^14.27.0",
     "dotenv": "^17.4.2",
-    "env": "^0.0.2"
+    "env": "^0.0.2",
+    "groq-sdk": "^1.6.0"
   }
 }
