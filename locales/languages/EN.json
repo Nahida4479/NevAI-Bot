@@ -1,0 +1,5 @@
+{
+    "onlyOwner": "Only administrator can use this command.",
+    "aiChannelSet": "The AI channel set to",
+    "aiChannelRemoved": "The AI channel has been removed from"
+}

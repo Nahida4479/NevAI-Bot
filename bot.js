@@ -3,6 +3,8 @@ import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags } from 'discord.j
 import { getAiResponse } from './src/models.js';
 import { aiCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
+import { loadLanguage, languageCommand } from './locales/languages.js';
+
 
 const client = new Client({
     intents: [
@@ -15,8 +17,8 @@ const client = new Client({
 client.once('clientReady', async () => {
     console.log(`Login as ${client.user.tag}`)
 
-    await client.application.commands.set([aiCommand.toJSON()]);
-    console.log('Command /ai registered');
+    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON()]);
+    console.log('Command /ai /language registered');
 })
 
 
@@ -32,20 +34,36 @@ client.on('interactionCreate', async (interaction) => {
         const channel = interaction.options.getChannel('channel');
 
         if (channel) {
-            const data = loadData();
+            const data = loadData()
 
-            if(data[interaction.guildId] === channel.id) {
-                delete data[interaction.guildId];
+            if (!data[interaction.guildId]) {
+                data[interaction.guildId] = {};
+            }
+
+            if(data[interaction.guildId].channel === channel.id) {
+                delete data[interaction.guildId].channel;
                 saveData(data);
-                await interaction.reply({ content: `AI channel removed`, flags: MessageFlags.Ephemeral});
+                await interaction.reply({ content: `AI channel removed ${channel}`, flags: MessageFlags.Ephemeral});
             } else {
-                data[interaction.guildId] = channel.id;
+                data[interaction.guildId].channel = channel.id;
                 saveData(data);
                 await interaction.reply({ content: `AI channel set to ${channel}`, flags: MessageFlags.Ephemeral });
             }
         }
     }
-})
+
+if (interaction.commandName === 'language') {
+    const lang = interaction.options.getString('lang');
+    const data = loadData();
+
+    if (!data[interaction.guildId]) {
+        data[interaction.guildId] = {};
+    }
+    data[interaction.guildId].language = lang;
+    saveData(data);
+    await interaction.reply({ content: `Language set to ${lang}`, flags: MessageFlags.Ephemeral });
+}
+});
 
 
 
