@@ -2,5 +2,7 @@
     "onlyOwner": "Tylko administrator serwera może użyć tej komendy",
     "aiChannelSet": "AI zostało aktywowane na kanale",
     "aiChannelRemoved": "AI zostało usunięte z kanału",
-    "noChannelSet": "Administrator serwera musi najpierw ustawić kanał AI za pomocą `/ai`"
+    "noChannelSet": "Administrator serwera musi najpierw ustawić kanał AI za pomocą `/ai`",
+    "setPromptButton": "Kliknij przycisk niżej aby ustawić niestandardowy prompt",
+    "SettingsTitle": "Ustawienia AI"
 }

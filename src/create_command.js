@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import { REST, Routes, SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 const aiCommand = new SlashCommandBuilder()
     .setName('ai')
@@ -10,4 +10,10 @@ const aiCommand = new SlashCommandBuilder()
     )
     .setDefaultMemberPermissions(0)
 
-export {aiCommand}
+const aiSettingsCommand = new SlashCommandBuilder()
+    .setName('ai_settings')
+    .setDescription('Change bot settings')
+    .setDefaultMemberPermissions(0);
+
+
+export {aiCommand, aiSettingsCommand}

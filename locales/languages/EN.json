@@ -2,5 +2,7 @@
     "onlyOwner": "Only administrator can use this command.",
     "aiChannelSet": "The AI channel set to",
     "aiChannelRemoved": "The AI channel has been removed from",
-    "noChannelSet": "The server administrator must first set an AI channel using `/ai`"
+    "noChannelSet": "The server administrator must first set an AI channel using `/ai`",
+    "setPromptButton": "Click the button below to set a custom AI prompt",
+    "SettingsTitle": "AI Settings"
 }

@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message } from 'discord.js';
 import { getAiResponse } from './src/models.js';
-import { aiCommand } from './src/create_command.js';
+import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
 
@@ -16,8 +16,8 @@ const client = new Client({
 client.once('clientReady', async () => {
     console.log(`Login as ${client.user.tag}`)
 
-    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON()]);
-    console.log('Command /ai /language registered');
+    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON()]);
+    console.log('Command /ai /language /ai_settings registered');
 })
 
 client.on('messageCreate', async (message) => {
@@ -84,9 +84,34 @@ if (interaction.commandName === 'language') {
     saveData(data);
     await interaction.reply({ content: `Language set to ${lang}`, flags: MessageFlags.Ephemeral });
 }
+
+
+
+if (interaction.commandName === 'ai_settings') {
+    if (!interaction.memberPermissions.has('Administrator')) {
+        await interaction.reply({ content: lang.onlyOwner, flags: MessageFlags.Ephemeral});
+        return;
+    }
+    const data = loadData()
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    const embed = new EmbedBuilder()
+        .setTitle('AI Settings')
+        .setDescription(lang.setPromptButton)  
+        .setColor(0x5865F2);
+    
+    const button = new ButtonBuilder()
+        .setCustomId('open_prompt')
+        .setLabel('Set prompt')
+        .setStyle(ButtonStyle.Primary);
+
+    const row = new ActionRowBuilder().addComponents(button);
+    
+    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral})
+}
+
 });
-
-
 
 
 client.login(process.env.DISCORD_API)
