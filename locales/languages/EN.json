@@ -1,5 +1,6 @@
 {
     "onlyOwner": "Only administrator can use this command.",
     "aiChannelSet": "The AI channel set to",
-    "aiChannelRemoved": "The AI channel has been removed from"
+    "aiChannelRemoved": "The AI channel has been removed from",
+    "noChannelSet": "The server administrator must first set an AI channel using `/ai`"
 }
