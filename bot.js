@@ -97,7 +97,7 @@ if (interaction.commandName === 'ai_settings') {
     const lang = loadLanguage(langCode);
 
     const embed = new EmbedBuilder()
-        .setTitle('AI Settings')
+        .setTitle(lang.SettingsTitle)
         .setDescription(lang.setPromptButton)  
         .setColor(0x5865F2);
     
