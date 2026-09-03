@@ -8,5 +8,9 @@
     "setPrompt": "Ustaw niestandardowy prompt",
     "setCustomAiPrompt": "Ustaw niestandardowy prompt AI",
     "EnterAiPrompt": "Podaj swój niestandardowy prompt AI",
-    "PromptSaved": "Niestandardowy prompt AI został zapisany"
+    "PromptSaved": "Niestandardowy prompt AI został zapisany",
+    "AddEmoji": "Dodaj niestandardową emotkę reakcji AI",
+    "setThinkingEmoji": "Ustaw ikonę myślenia bota",
+    "EnterEmoji": "Wyślij emoji",
+    "EmojiSaved": "Emoji zapisane"
 }

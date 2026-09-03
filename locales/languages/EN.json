@@ -8,5 +8,10 @@
     "setPrompt": "Set prompt",
     "setCustomAiPrompt": "Set custom AI prompt",
     "EnterAiPrompt": "Enter your custom prompt",
-    "PromptSaved": "Custom prompt saved"
+    "PromptSaved": "Custom prompt saved",
+    "AddEmoji": "Add custom AI reaction emoji",
+    "AddEmoji": "Set thinking emoji",
+    "setThinkingEmoji": "Set Thinking Emoji",
+    "EnterEmoji": "Enter the emoji",
+    "EmojiSaved": "Emoji saved!"
 }

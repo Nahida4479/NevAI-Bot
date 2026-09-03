@@ -4,6 +4,7 @@ import { getAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
+import { Models } from 'groq-sdk/resources';
 
 const client = new Client({
     intents: [
@@ -39,6 +40,34 @@ client.on('messageCreate', async (message) => {
     if (message.channelId !== guildData.channel) return;
     if (!message.mentions.has(client.user)) return;
     console.log('Bot was mentioned on the correct channel');
+
+    if (!guildData.history) {
+        guildData.history = [];
+    }
+
+    guildData.history.push({ role: 'user', content: message.content });
+
+    const systemPrompt = guildData.prompt || 'You are a helpful assistant named NevAI';
+    const messageToSend = [
+        { role: 'system', content: systemPrompt },
+        ...guildData.history
+    ]
+
+    await message.react(guildData.emoji || '🤔')
+    const response = await getAiResponse(messageToSend)
+
+    guildData.history.push({ role: 'assistant', content: response });
+
+    if (guildData.history.length > 15) {
+        guildData.history = guildData.history.slice(-15);
+    }
+
+    data[message.guildId] = guildData;
+    saveData(data);
+
+    await message.reply(response)
+    await message.reactions.removeAll();
+
 })
 
 
@@ -107,9 +136,15 @@ if (interaction.commandName === 'ai_settings') {
         .setLabel(lang.setPrompt)
         .setStyle(ButtonStyle.Primary);
 
+    const emoji_button = new ButtonBuilder()
+        .setCustomId('emoji_button')
+        .setLabel(lang.AddEmoji)
+        .setStyle(ButtonStyle.Primary)
+
     const row = new ActionRowBuilder().addComponents(button);
+    const row_emoji = new ActionRowBuilder().addComponents(emoji_button);
     
-    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral})
+    await interaction.reply({ embeds: [embed], components: [row, row_emoji], flags: MessageFlags.Ephemeral})
     }
 }
 
@@ -134,6 +169,46 @@ if (interaction.isButton() && interaction.customId === 'open_prompt') {
 
     await interaction.showModal(modal);
 }
+
+
+if (interaction.isButton() && interaction.customId === 'emoji_button') {
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    const modal = new ModalBuilder()
+        .setCustomId('emoji_modal')
+        .setTitle(lang.setThinkingEmoji);
+
+    const emojiInput = new TextInputBuilder()
+        .setCustomId('emoji_input')
+        .setLabel(lang.EnterEmoji)
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+    const modalRow = new ActionRowBuilder().addComponents(emojiInput);
+    modal.addComponents(modalRow); 
+
+    await interaction.showModal(modal);
+}
+
+
+if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
+    const emoji = interaction.fields.getTextInputValue('emoji_input');
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    if (!data[interaction.guildId]) {
+        data[interaction.guildId] = {}
+    }
+    data[interaction.guildId].emoji = emoji;
+    saveData();
+
+    await interaction.reply({ content: `${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
+
+}
+
 
 if (interaction.isModalSubmit() && interaction.customId === 'prompt_modal') {
     const prompt = interaction.fields.getTextInputValue('prompt_input');
