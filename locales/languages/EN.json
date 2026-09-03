@@ -4,5 +4,9 @@
     "aiChannelRemoved": "The AI channel has been removed from",
     "noChannelSet": "The server administrator must first set an AI channel using `/ai`",
     "setPromptButton": "Click the button below to set a custom AI prompt",
-    "SettingsTitle": "AI Settings"
+    "SettingsTitle": "AI Settings",
+    "setPrompt": "Set prompt",
+    "setCustomAiPrompt": "Set custom AI prompt",
+    "EnterAiPrompt": "Enter your custom prompt",
+    "PromptSaved": "Custom prompt saved"
 }

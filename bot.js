@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { getAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
@@ -19,6 +19,7 @@ client.once('clientReady', async () => {
     await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON()]);
     console.log('Command /ai /language /ai_settings registered');
 })
+
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
@@ -42,7 +43,7 @@ client.on('messageCreate', async (message) => {
 
 
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    if (interaction.isChatInputCommand()) {
 
     if (interaction.commandName === 'ai') {
         const data = loadData()
@@ -103,12 +104,50 @@ if (interaction.commandName === 'ai_settings') {
     
     const button = new ButtonBuilder()
         .setCustomId('open_prompt')
-        .setLabel('Set prompt')
+        .setLabel(lang.setPrompt)
         .setStyle(ButtonStyle.Primary);
 
     const row = new ActionRowBuilder().addComponents(button);
     
     await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral})
+    }
+}
+
+if (interaction.isButton() && interaction.customId === 'open_prompt') {
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+
+    const modal = new ModalBuilder()
+        .setCustomId('prompt_modal')
+        .setTitle(lang.setCustomAiPrompt);
+
+    const promptInput = new TextInputBuilder()
+        .setCustomId('prompt_input')
+        .setLabel(lang.EnterAiPrompt)
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+
+    const modalRow = new ActionRowBuilder().addComponents(promptInput);
+    modal.addComponents(modalRow)
+
+    await interaction.showModal(modal);
+}
+
+if (interaction.isModalSubmit() && interaction.customId === 'prompt_modal') {
+    const prompt = interaction.fields.getTextInputValue('prompt_input');
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    if (!data[interaction.guildId]) {
+        data[interaction.guildId] = {};
+    }
+    data[interaction.guildId].prompt = prompt;
+    saveData(data);
+
+    await interaction.reply({ content: `${lang.PromptSaved}`, flags: MessageFlags.Ephemeral })
 }
 
 });

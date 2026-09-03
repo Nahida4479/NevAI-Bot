@@ -3,5 +3,9 @@
     "aiChannelSet": "",
     "aiChannelRemoved": "",
     "noChannelSet": "",
-    "setPromptButton": ""
+    "setPromptButton": "",
+    "SettingsTitle": "",
+    "setPrompt": "",
+    "setCustomAiPrompt": "",
+    "EnterAiPrompt": ""
 }
