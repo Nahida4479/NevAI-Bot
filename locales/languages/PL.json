@@ -3,7 +3,7 @@
     "aiChannelSet": "AI zostało aktywowane na kanale",
     "aiChannelRemoved": "AI zostało usunięte z kanału",
     "noChannelSet": "Administrator serwera musi najpierw ustawić kanał AI za pomocą `/ai`",
-    "setPromptButton": "Kliknij przycisk niżej aby ustawić niestandardowy prompt",
+    "setPromptButton": "Kliknij jeden z przycisków poniżej aby zmienić ustawienia bota",
     "SettingsTitle": "Ustawienia AI",
     "setPrompt": "Ustaw niestandardowy prompt",
     "setCustomAiPrompt": "Ustaw niestandardowy prompt AI",

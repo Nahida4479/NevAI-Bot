@@ -14,6 +14,14 @@ const client = new Client({
     ]
 })
 
+process.on('unhandledRejection', (reason) => {
+    console.log(reason);
+});
+
+process.on('uncaughtException', (reason) => {
+    console.log(reason);
+})
+
 client.once('clientReady', async () => {
     console.log(`Login as ${client.user.tag}`)
 
@@ -23,7 +31,7 @@ client.once('clientReady', async () => {
 
 
 client.on('messageCreate', async (message) => {
-    console.log('Message received:', MessageContent, 'from channel', massage.channelId);
+    console.log('Message received:', message.content, 'from channel', message.channelId);
 
     if (message.author.bot) return;
     const data = loadData()
@@ -55,6 +63,7 @@ client.on('messageCreate', async (message) => {
         ...guildData.history
     ]
 
+    await message.channel.sendTyping();
     await message.react(guildData.emoji || '🤔')
     const response = await getAiResponse(messageToSend)
 
@@ -69,7 +78,7 @@ client.on('messageCreate', async (message) => {
 
     await message.reply(response)
     await message.reactions.removeAll();
-
+    
 })
 
 
@@ -104,6 +113,7 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
     }
+    
 
 if (interaction.commandName === 'language') {
     const lang = interaction.options.getString('lang');
@@ -131,17 +141,21 @@ if (interaction.commandName === 'ai_settings') {
     const embed = new EmbedBuilder()
         .setTitle(lang.SettingsTitle)
         .setDescription(lang.setPromptButton)  
-        .setColor(0x5865F2);
-    
+        .setColor(0xD65940)
+        // .setImage('https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png')
+        .setThumbnail('https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png')
+        .setFooter({ text: new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }), iconURL: 'https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png'})
+        
+
     const button = new ButtonBuilder()
         .setCustomId('open_prompt')
         .setLabel(lang.setPrompt)
-        .setStyle(ButtonStyle.Primary);
+        .setStyle(ButtonStyle.Danger)
 
     const emoji_button = new ButtonBuilder()
         .setCustomId('emoji_button')
         .setLabel(lang.AddEmoji)
-        .setStyle(ButtonStyle.Primary)
+        .setStyle(ButtonStyle.Danger)
 
     const row = new ActionRowBuilder().addComponents(button);
     const row_emoji = new ActionRowBuilder().addComponents(emoji_button);
