@@ -5,6 +5,8 @@ import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
 import { Models } from 'groq-sdk/resources';
+import { getEmoji } from './src/exportEmoji.js';
+import { ensureEmojis } from './src/uploadEmoji.js';
 
 const client = new Client({
     intents: [
@@ -24,6 +26,7 @@ process.on('uncaughtException', (reason) => {
 
 client.once('clientReady', async () => {
     console.log(`Login as ${client.user.tag}`)
+    await ensureEmojis(client);
 
     await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON()]);
     console.log('Command /ai /language /ai_settings registered');
@@ -139,13 +142,13 @@ if (interaction.commandName === 'ai_settings') {
     const lang = loadLanguage(langCode);
 
     const embed = new EmbedBuilder()
-        .setTitle(lang.SettingsTitle)
-        .setDescription(lang.setPromptButton)  
+        .setAuthor({ name: 'NevAI', iconURL: 'https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png' })
+        // .setTitle(lang.SettingsTitle)
+        // .setTitle(lang.setPromptButton)
+        .setDescription(lang.setPromptButton)
         .setColor(0xD65940)
-        // .setImage('https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png')
-        .setThumbnail('https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png')
-        .setFooter({ text: new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }), iconURL: 'https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png'})
-        
+        .setImage('https://cdn.hackclub.com/01a06e85-6953-7166-b71d-64361d6a0f29/nevai-settings-banner.png')
+        .setTimestamp();
 
     const button = new ButtonBuilder()
         .setCustomId('open_prompt')
@@ -238,7 +241,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     data[interaction.guildId].emoji = emoji;
     saveData(data);
 
-    await interaction.reply({ content: `${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: `${getEmoji(client, nevai_success)} ${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
 
 }
 
