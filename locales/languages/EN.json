@@ -10,8 +10,8 @@
     "EnterAiPrompt": "Enter your custom prompt",
     "PromptSaved": "Custom prompt saved",
     "AddEmoji": "Add custom AI reaction emoji",
-    "AddEmoji": "Set thinking emoji",
     "setThinkingEmoji": "Set Thinking Emoji",
     "EnterEmoji": "Enter the emoji",
-    "EmojiSaved": "Emoji saved!"
+    "EmojiSaved": "Emoji saved!",
+    "invalidEmoji": "Failed emoji (please paste your emoji or put discord emoji id for example <:example:1497674344535560323>)"
 }

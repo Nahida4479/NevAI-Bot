@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector } from 'discord.js';
 import { getAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
@@ -23,6 +23,8 @@ client.once('clientReady', async () => {
 
 
 client.on('messageCreate', async (message) => {
+    console.log('Message received:', MessageContent, 'from channel', massage.channelId);
+
     if (message.author.bot) return;
     const data = loadData()
     const langCode = data[message.guildId]?.language || 'EN';
@@ -199,11 +201,28 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     const langCode = data[interaction.guildId]?.language || 'EN';
     const lang = loadLanguage(langCode);
 
+    const customDiscordEmoji = /^<a?:\w+:(\d+)>$/;
+    const rawIdRegex = /^\d+$/;
+    const match = emoji.match(customDiscordEmoji);
+
+
+    let emojiToSave;
+    if (match) {
+        emojiToSave = match[1];
+    } else if (emoji.length <= 4) {
+        emojiToSave = emoji;
+    } else if (rawIdRegex.test(emoji)) {
+        emojiToSave = emoji;
+    } else {
+        await interaction.reply({ content: lang.invalidEmoji, flags: MessageFlags.Ephemeral });
+        return;
+    }
+
     if (!data[interaction.guildId]) {
         data[interaction.guildId] = {}
     }
     data[interaction.guildId].emoji = emoji;
-    saveData();
+    saveData(data);
 
     await interaction.reply({ content: `${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
 

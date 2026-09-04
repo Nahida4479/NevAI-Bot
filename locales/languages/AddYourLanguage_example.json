@@ -10,7 +10,8 @@
     "EnterAiPrompt": "",
     "PromptSaved": "",
     "AddEmoji": "",
-    "setThinkingEmoji": "Set Thinking Emoji",
-    "EnterEmoji": "Enter the emoji",
-    "EmojiSaved": "Emoji saved!"
+    "setThinkingEmoji": "",
+    "EnterEmoji": "",
+    "EmojiSaved": "",
+    "invalidEmoji": ""
 }

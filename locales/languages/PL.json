@@ -12,5 +12,6 @@
     "AddEmoji": "Dodaj niestandardową emotkę reakcji AI",
     "setThinkingEmoji": "Ustaw ikonę myślenia bota",
     "EnterEmoji": "Wyślij emoji",
-    "EmojiSaved": "Emoji zapisane"
+    "EmojiSaved": "Emoji zapisane",
+    "invalidEmoji": "Zły typ emoji (proszę wklej emoji bądź wprowadź id emoji np. <:example:1497674344535560323>"
 }
