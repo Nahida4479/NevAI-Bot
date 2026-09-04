@@ -241,7 +241,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     data[interaction.guildId].emoji = emoji;
     saveData(data);
 
-    await interaction.reply({ content: `${getEmoji(client, nevai_success)} ${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
 
 }
 
@@ -258,7 +258,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'prompt_modal') {
     data[interaction.guildId].prompt = prompt;
     saveData(data);
 
-    await interaction.reply({ content: `${lang.PromptSaved}`, flags: MessageFlags.Ephemeral })
+    await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.PromptSaved}`, flags: MessageFlags.Ephemeral })
 }
 
 });

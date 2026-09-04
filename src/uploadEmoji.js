@@ -7,12 +7,12 @@ export async function ensureEmojis(client) {
     if (!existing.includes('nevai_success')) {
         await client.application.emojis.create({
             attachment: './src/discord_emoji/nevai-emoji-success.png',
-            name: 'nevai_success'
+            name: 'success'
         });
         console.log('Emoji success loaded');
     }
 
-    if (!existing.includes('nevai_error')) {
+    if (!existing.includes('error')) {
         await client.application.emojis.create({
             attachment: './src/discord_emoji/nevai-emoji-error.png',
             name: 'nevai_error'
