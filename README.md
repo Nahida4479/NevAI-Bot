@@ -8,3 +8,6 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 - [Groq API](https://console.groq.com/keys)
 - [Gemini API](https://aistudio.google.com/api-keys)
 - [HackClub API](https://ai.hackclub.com/keys)
+
+# License 
+[**MIT LICENSE**](./LICENSE)
