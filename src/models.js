@@ -7,6 +7,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API});
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
 const HackClubModels = ['meta-llama/llama-3.3-70b-instruct']
+const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 
 async function callGroq(messages) {
     for (const model of groqModels) {
@@ -21,6 +22,18 @@ async function callGroq(messages) {
     throw new Error(`All Groq Api models failed`)
 }
 
+async function callGroqVisionModels(message) {
+    for (const model of groqModels) {
+        try {
+            const response = await groq.chat.completions.create({ messages, model});
+            console.log(`GROQ_API_VISIONS_MODEL: ${model}`)
+            return response.choices[0].message.content;
+        } catch (err) {
+            console.log(`GROQ_API_VISIONS_MODEL ${model} failed, ${err}`)
+        }
+    }
+    throw new Error(`All Groq Api vision models failed`)
+}
 
 async function callGemini(messages) {
     const lastMessage = messages[messages.length - 1].content;
