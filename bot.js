@@ -222,13 +222,14 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     const customDiscordEmoji = /^<a?:\w+:(\d+)>$/;
     const rawIdRegex = /^\d+$/;
     const match = emoji.match(customDiscordEmoji);
+    const isEmoji = /^\p{Extended_Pictographic}+$/u;
 
 
     let emojiToSave;
     if (match) {
         emojiToSave = match[1];
-    } else if (emoji.length <= 4) {
-        emojiToSave = emoji;
+    } else if (isEmoji.test(emoji)) {
+        emojiToSave = emoji; 
     } else if (rawIdRegex.test(emoji)) {
         emojiToSave = emoji;
     } else {
@@ -239,7 +240,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     if (!data[interaction.guildId]) {
         data[interaction.guildId] = {}
     }
-    data[interaction.guildId].emoji = emoji;
+    data[interaction.guildId].emojiToSave = emoji;
     saveData(data);
 
     await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
