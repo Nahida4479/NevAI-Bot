@@ -12,7 +12,7 @@ const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 async function callGroq(messages) {
     for (const model of groqModels) {
         try {
-            const response = await groq.chat.completions.create({ messages, model });
+            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden" });
             console.log(`GROQ_API: ${model}`)
             return response.choices[0].message.content;
         } catch(err) {
@@ -25,7 +25,7 @@ async function callGroq(messages) {
 async function callGroqVisionModels(messages) {
     for (const model of visionModel) {
         try {
-            const response = await groq.chat.completions.create({ messages, model});
+            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
             console.log(`GROQ_API_VISIONS_MODEL: ${model}`)
             return response.choices[0].message.content;
         } catch (err) {
@@ -110,6 +110,7 @@ async function getVisionAiResponse(messages) {
     } catch (err) {
         console.log(`GROQ_API_VISION_MODEL: Failed`)
     }
+    throw new Error(`All VISION AI providers failed`)
 }
 
 export {getAiResponse, getVisionAiResponse};

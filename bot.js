@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector } from 'discord.js';
-import { getAiResponse } from './src/models.js';
+import { getAiResponse, getVisionAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
@@ -74,7 +74,22 @@ client.on('messageCreate', async (message) => {
         console.log(`Discord react emoji error: ${err}`);
         await message.react('🤔')
     }
-    const response = await getAiResponse(messageToSend)
+    
+    let response;
+    if (message.attachments.size > 0) {
+        const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
+        const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
+        const textPart = { type: "text", text: message.content };
+        const createPart = [textPart, ...imageParts]
+
+        const visionMessage = [
+            ...messageToSend.slice(0, -1),
+            { role: 'user', content: createPart}
+        ];
+        response = await getVisionAiResponse(visionMessage)
+    } else {
+        response = await getAiResponse(messageToSend)
+    }
 
     guildData.history.push({ role: 'assistant', content: response });
 
