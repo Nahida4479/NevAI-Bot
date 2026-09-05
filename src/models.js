@@ -22,8 +22,8 @@ async function callGroq(messages) {
     throw new Error(`All Groq Api models failed`)
 }
 
-async function callGroqVisionModels(message) {
-    for (const model of groqModels) {
+async function callGroqVisionModels(messages) {
+    for (const model of visionModel) {
         try {
             const response = await groq.chat.completions.create({ messages, model});
             console.log(`GROQ_API_VISIONS_MODEL: ${model}`)
@@ -104,5 +104,12 @@ async function getAiResponse(messages) {
     throw new Error(`All AI providers failed`);
 }
 
+async function getVisionAiResponse(messages) {
+    try{
+        return await callGroqVisionModels(messages);
+    } catch (err) {
+        console.log(`GROQ_API_VISION_MODEL: Failed`)
+    }
+}
 
-export {getAiResponse};
+export {getAiResponse, getVisionAiResponse};
