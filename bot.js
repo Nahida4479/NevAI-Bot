@@ -27,6 +27,7 @@ process.on('uncaughtException', (reason) => {
 client.once('clientReady', async () => {
     console.log(`Login as ${client.user.tag}`)
     await ensureEmojis(client);
+    console.log(client.application.emojis.cache.map(e => e.name));
 
     await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON()]);
     console.log('Command /ai /language /ai_settings registered');

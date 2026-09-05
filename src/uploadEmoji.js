@@ -4,7 +4,7 @@ export async function ensureEmojis(client) {
     await client.application.emojis.fetch();
     const existing = client.application.emojis.cache.map(e => e.name);
 
-    if (!existing.includes('nevai_success')) {
+    if (!existing.includes('success')) {
         await client.application.emojis.create({
             attachment: './src/discord_emoji/nevai-emoji-success.png',
             name: 'success'
@@ -15,7 +15,7 @@ export async function ensureEmojis(client) {
     if (!existing.includes('error')) {
         await client.application.emojis.create({
             attachment: './src/discord_emoji/nevai-emoji-error.png',
-            name: 'nevai_error'
+            name: 'error'
         });
         console.log('Emoji error loaded');
     }
