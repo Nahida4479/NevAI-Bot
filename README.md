@@ -15,7 +15,7 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 
 - [Discord API](https://discord.com/developers/applications)
 
-### Env
+## Env
 
 ```
 GROQ_API=
