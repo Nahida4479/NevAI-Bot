@@ -68,7 +68,12 @@ client.on('messageCreate', async (message) => {
     ]
 
     await message.channel.sendTyping();
-    await message.react(guildData.emoji || '🤔')
+    try {
+        await message.react(guildData.emoji || '🤔')
+    } catch (err) {
+        console.log(`Discord react emoji error: ${err}`);
+        await message.react('🤔')
+    }
     const response = await getAiResponse(messageToSend)
 
     guildData.history.push({ role: 'assistant', content: response });
@@ -95,7 +100,7 @@ client.on('interactionCreate', async (interaction) => {
         const lang = loadLanguage(langCode);
 
         if (!interaction.memberPermissions.has('Administrator')) {
-            await interaction.reply({ content: lang.onlyOwner, flags: MessageFlags.Ephemeral });
+            await interaction.reply({ content: `${ getEmoji(client, 'error') } ${lang.onlyOwner}`, flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -109,11 +114,11 @@ client.on('interactionCreate', async (interaction) => {
             if(data[interaction.guildId].channel === channel.id) {
                 delete data[interaction.guildId].channel;
                 saveData(data);
-                await interaction.reply({ content: `${lang.aiChannelRemoved} ${channel}`, flags: MessageFlags.Ephemeral});
+                await interaction.reply({ content: `${ getEmoji(client, 'success') } ${lang.aiChannelRemoved} ${channel}`, flags: MessageFlags.Ephemeral});
             } else {
                 data[interaction.guildId].channel = channel.id;
                 saveData(data);
-                await interaction.reply({ content: `${lang.aiChannelSet} ${channel}`, flags: MessageFlags.Ephemeral });
+                await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.aiChannelSet} ${channel}`, flags: MessageFlags.Ephemeral });
             }
         }
     }
@@ -128,14 +133,14 @@ if (interaction.commandName === 'language') {
     }
     data[interaction.guildId].language = lang;
     saveData(data);
-    await interaction.reply({ content: `Language set to ${lang}`, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: `${getEmoji(client, 'success')} Language set to ${lang}`, flags: MessageFlags.Ephemeral });
 }
 
 
 
 if (interaction.commandName === 'ai_settings') {
     if (!interaction.memberPermissions.has('Administrator')) {
-        await interaction.reply({ content: lang.onlyOwner, flags: MessageFlags.Ephemeral});
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.onlyOwner}`, flags: MessageFlags.Ephemeral});
         return;
     }
     const data = loadData()
@@ -233,14 +238,14 @@ if (interaction.isModalSubmit() && interaction.customId === 'emoji_modal') {
     } else if (rawIdRegex.test(emoji)) {
         emojiToSave = emoji;
     } else {
-        await interaction.reply({ content: lang.invalidEmoji, flags: MessageFlags.Ephemeral });
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.invalidEmoji}`, flags: MessageFlags.Ephemeral });
         return;
     }
 
     if (!data[interaction.guildId]) {
         data[interaction.guildId] = {}
     }
-    data[interaction.guildId].emojiToSave = emoji;
+    data[interaction.guildId].emoji = emojiToSave;
     saveData(data);
 
     await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.EmojiSaved}`, flags: MessageFlags.Ephemeral });
