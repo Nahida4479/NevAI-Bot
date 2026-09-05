@@ -61,7 +61,8 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: message.content });
 
-    const systemPrompt = guildData.prompt || 'You are a helpful assistant named NevAI';
+    const basePrompt = "You are a assistand named NevAI. Use markdown and keep your answer brief and under 1,500 characters. "
+    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1,500 characters. ';
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...guildData.history
