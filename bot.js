@@ -106,7 +106,21 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-    guildData.history.push({ role: 'assistant', content: response });
+    if (guildData.logschannel) {
+        const logChannel = client.channels.cache.get(guildData.logschannel)
+
+        const logEmbed = new EmbedBuilder()
+            .setColor(0xFFA500)
+            .addFields(
+                { name: 'User message', value: message.content || `${lang.noMessageContent}`},
+                { name: 'Model', value: response.model},
+            )
+            .setTimestamp();
+
+        await logChannel.send({ embed: [logEmbed] })
+    }
+
+    guildData.history.push({ role: 'assistant', content: response.content });
 
     if (guildData.history.length > 15) {
         guildData.history = guildData.history.slice(-15);
@@ -115,7 +129,7 @@ client.on('messageCreate', async (message) => {
     data[message.guildId] = guildData;
     saveData(data);
 
-    await message.reply(response)
+    await message.reply(response.content)
     await message.reactions.removeAll();
     
 })

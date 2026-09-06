@@ -17,5 +17,6 @@
     "unsuportedImage": "",
     "aiResponseError": "",
     "logsChannelRemoved": "",
-    "setLogsChannel": ""
+    "setLogsChannel": "",
+    "noMessageContent": "No content"
 }

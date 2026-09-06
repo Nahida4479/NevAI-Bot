@@ -17,5 +17,6 @@
     "unsuportedImage": "Niewspierany rodzaj obrazu",
     "aiResponseError": "Błąd po stronie AI. Spróbuj ponownie",
     "logsChannelRemoved": "Usunięto kanał logów",
-    "setLogsChannel": "Dodano kanał logów"
+    "setLogsChannel": "Dodano kanał logów",
+    "noMessageContent": "Brak wiadomości"
 }
