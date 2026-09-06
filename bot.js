@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector } from 'discord.js';
 import { getAiResponse, getVisionAiResponse } from './src/models.js';
-import { aiCommand, aiSettingsCommand } from './src/create_command.js';
+import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
 import { Models } from 'groq-sdk/resources';
@@ -29,8 +29,8 @@ client.once('clientReady', async () => {
     await ensureEmojis(client);
     console.log(client.application.emojis.cache.map(e => e.name));
 
-    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON()]);
-    console.log('Command /ai /language /ai_settings registered');
+    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON(), logsCommand.toJSON()]);
+    console.log('Command /ai /language /ai_settings /logs registered');
 })
 
 
@@ -61,8 +61,8 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: message.content });
 
-    const basePrompt = "You are a assistand named NevAI. Use markdown and keep your answer brief and under 1,500 characters. "
-    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1,500 characters. ';
+    const basePrompt = "You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. "
+    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...guildData.history
@@ -153,6 +153,34 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
     
+if (interaction.commandName === 'logs') {
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    if (!interaction.memberPermissions.has('Administrator')) {
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.onlyOwner}`, flags: MessageFlags.Ephemeral})
+        return;
+    }
+
+    const channel = interaction.options.getChannel('logschannel');
+
+    if (channel) {
+        if (!data[interaction.guildId]) {
+            data[interaction.guildId] = {};
+        }
+
+        if (data[interaction.guildId].logschannel === channel.id) {
+            delete data[interaction.guildId].logschannel;
+            saveData(data)
+            await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.logsChannelRemoved}`, flags: MessageFlags.Ephemeral})
+        } else {
+            data[interaction.guildId].logschannel = channel.id;
+            saveData(data)
+            await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.setLogsChannel}`, flags: MessageFlags.Ephemeral})
+        }
+    }
+}
 
 if (interaction.commandName === 'language') {
     const lang = interaction.options.getString('lang');

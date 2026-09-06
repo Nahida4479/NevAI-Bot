@@ -14,7 +14,7 @@ async function callGroq(messages) {
         try {
             const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden" });
             console.log(`GROQ_API: ${model}`)
-            return response.choices[0].message.content;
+            return { content: response.choices[0].message.content, model: model };
         } catch(err) {
             console.log(`Groq model ${model} failed, ${err}`);
         }
@@ -27,7 +27,7 @@ async function callGroqVisionModels(messages) {
         try {
             const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
             console.log(`GROQ_API_VISIONS_MODEL: ${model}`)
-            return response.choices[0].message.content;
+            return { content: response.choices[0].message.content, model: model }
         } catch (err) {
             console.log(`GROQ_API_VISIONS_MODEL ${model} failed, ${err}`)
         }
@@ -50,7 +50,7 @@ async function callGemini(messages) {
             const data = await response.json();
             const textStep = data.steps.find(step => step.type === 'model_output');
             console.log(`GEMINI_API: ${model}`);
-            return textStep.content[0].text;
+            return { content: textStep.content[0].text, model: model };
         } catch (err) {
             console.log(`Gemini model ${model} failed, ${err}`);
         }
@@ -72,7 +72,7 @@ async function callHackClub(messages) {
         });
         const data = await respond.json();
         console.log(`HACKCLUB_API: ${model}`);
-        return data.choices[0].message.content;
+        return { content: data.choices[0].message.content, model: model};
         } catch (err) {
             console.log(`HackClub model ${model} failed ${err}`)
         }

@@ -15,5 +15,7 @@
     "EmojiSaved": "Emoji zapisane",
     "invalidEmoji": "Zły typ emoji (proszę wklej emoji bądź wprowadź id emoji np. `<: example :1497674344535560323>` (bez spacji)",
     "unsuportedImage": "Niewspierany rodzaj obrazu",
-    "aiResponseError": "Błąd po stronie AI. Spróbuj ponownie"
+    "aiResponseError": "Błąd po stronie AI. Spróbuj ponownie",
+    "logsChannelRemoved": "Usunięto kanał logów",
+    "setLogsChannel": "Dodano kanał logów"
 }

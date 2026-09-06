@@ -15,5 +15,7 @@
     "EmojiSaved": "",
     "invalidEmoji": "",
     "unsuportedImage": "",
-    "aiResponseError": ""
+    "aiResponseError": "",
+    "logsChannelRemoved": "",
+    "setLogsChannel": ""
 }

@@ -15,5 +15,7 @@
     "EmojiSaved": "Emoji saved!",
     "invalidEmoji": "Failed emoji (please paste your emoji or put discord emoji id for example `<: example :3427674344535560323> (no spaces)`)",
     "unsuportedImage": "Unsupported image",
-    "aiResponseError": "AI response error"
+    "aiResponseError": "AI response error",
+    "logsChannelRemoved": "Logs channel removed",
+    "setLogsChannel": "Add logs channel"
 }

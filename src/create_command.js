@@ -15,5 +15,18 @@ const aiSettingsCommand = new SlashCommandBuilder()
     .setDescription('Change bot settings')
     .setDefaultMemberPermissions(0);
 
+const helpCommand = new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('All commands')
 
-export {aiCommand, aiSettingsCommand}
+const logsCommand = new SlashCommandBuilder()
+    .setName('logs')
+    .setDescription('Bot response logs')
+    .addChannelOption(option => 
+        option.setName('logschannel')
+        .setDescription('Logs channel')
+    )
+    .setDefaultMemberPermissions(0)
+
+
+export {aiCommand, aiSettingsCommand, logsCommand, helpCommand};
