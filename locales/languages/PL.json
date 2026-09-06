@@ -18,5 +18,9 @@
     "aiResponseError": "Błąd po stronie AI. Spróbuj ponownie",
     "logsChannelRemoved": "Usunięto kanał logów",
     "setLogsChannel": "Dodano kanał logów",
-    "noMessageContent": "Brak wiadomości"
+    "noMessageContent": "Brak wiadomości",
+    "aicommands": "Wybierz kanał na którym Bot AI będzie odpowiadać",
+    "aisettingscommand": "Otwórz panel ustawień bota",
+    "languagecommand": "Zmień język bota",
+    "logscommand": "Ustaw kanał gdzie bot będzie wysyłał logi"
 }

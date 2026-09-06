@@ -17,5 +17,10 @@
     "unsuportedImage": "Unsupported image",
     "aiResponseError": "AI response error",
     "logsChannelRemoved": "Logs channel removed",
-    "setLogsChannel": "Add logs channel"
+    "setLogsChannel": "Add logs channel",
+    "noMessageContent": "No content",
+    "aicommands": "Set the channel where the AI will respond to mentions.",
+    "aisettingscommand": "Open the settings panel to customize the AI prompt and reaction emoji.",
+    "languagecommand": "Change the bot's command response language.",
+    "logscommand": "Set the channel where AI response logs will be sent."
 }

@@ -25,6 +25,7 @@ const logsCommand = new SlashCommandBuilder()
     .addChannelOption(option => 
         option.setName('logschannel')
         .setDescription('Logs channel')
+        .setRequired(true)
     )
     .setDefaultMemberPermissions(0)
 

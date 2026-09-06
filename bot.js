@@ -29,8 +29,8 @@ client.once('clientReady', async () => {
     await ensureEmojis(client);
     console.log(client.application.emojis.cache.map(e => e.name));
 
-    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON(), logsCommand.toJSON()]);
-    console.log('Command /ai /language /ai_settings /logs registered');
+    await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON(), logsCommand.toJSON(), helpCommand.toJSON()]);
+    console.log('Command /ai /language /ai_settings /logs /help registered');
 })
 
 
@@ -117,7 +117,7 @@ client.on('messageCreate', async (message) => {
             )
             .setTimestamp();
 
-        await logChannel.send({ embed: [logEmbed] })
+        await logChannel.send({ embeds: [logEmbed] })
     }
 
     guildData.history.push({ role: 'assistant', content: response.content });
@@ -243,6 +243,24 @@ if (interaction.commandName === 'ai_settings') {
     
     await interaction.reply({ embeds: [embed], components: [row, row_emoji], flags: MessageFlags.Ephemeral})
     }
+}
+
+if (interaction.commandName === 'help') {
+    const data = loadData()
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    const helpEmbed = new EmbedBuilder()
+        .setColor(0xFFFFFF)
+        .setTitle('Bot Commands')
+        .addFields(
+            { name: '`/ai`', value: `${lang.aicommands}`},
+            { name: '`/ai_settings`', value: `${lang.aisettingscommand}`},
+            { name: '`/language`',value: `${lang.languagecommand}`},
+            { name: '`/logs`', value: `${lang.logscommand}`}
+        );
+
+        await interaction.reply({ embeds: [helpEmbed], flags: MessageFlags.Ephemeral });
 }
 
 if (interaction.isButton() && interaction.customId === 'open_prompt') {
