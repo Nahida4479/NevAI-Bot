@@ -13,5 +13,7 @@
     "setThinkingEmoji": "Set Thinking Emoji",
     "EnterEmoji": "Enter the emoji",
     "EmojiSaved": "Emoji saved!",
-    "invalidEmoji": "Failed emoji (please paste your emoji or put discord emoji id for example `<: example :3427674344535560323> (no spaces)`)"
+    "invalidEmoji": "Failed emoji (please paste your emoji or put discord emoji id for example `<: example :3427674344535560323> (no spaces)`)",
+    "unsuportedImage": "Unsupported image",
+    "aiResponseError": "AI response error"
 }

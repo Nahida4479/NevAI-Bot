@@ -87,9 +87,23 @@ client.on('messageCreate', async (message) => {
             ...messageToSend.slice(0, -1),
             { role: 'user', content: createPart}
         ];
+        try {
         response = await getVisionAiResponse(visionMessage)
+        } catch (err) {
+            console.log(err);
+            await message.reactions.removeAll();
+            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
+            return;
+        }
     } else {
+        try {
         response = await getAiResponse(messageToSend)
+        } catch (err) {
+            console.log(err);
+            await message.reactions.removeAll();
+            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
+            return;
+        }
     }
 
     guildData.history.push({ role: 'assistant', content: response });
