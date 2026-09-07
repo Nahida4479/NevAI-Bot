@@ -36,6 +36,7 @@ client.once('clientReady', async () => {
 
 client.on('messageCreate', async (message) => {
     console.log('Message received:', message.content, 'from channel', message.channelId);
+    const serverEmoji = message.guild.emojis.cache.map(e => `${e.name}: ${e}`).join(', ')
 
     if (message.author.bot) return;
     const data = loadData()
@@ -61,7 +62,7 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: message.content });
 
-    const basePrompt = "You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. "
+    const basePrompt = `You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. `
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
     const messageToSend = [
         { role: 'system', content: systemPrompt },
