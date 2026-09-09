@@ -15,7 +15,7 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 - Multi-language support ([add your own language](./CONTRIBUTING.md)).
 - The bot saves the last 15 messages for chat context.
 - Live logs support (`/logs` command).
-- Bot can use custom Discord server emoji.
+- The bot can use custom Discord server emoji.
 
 # AI models list
 
