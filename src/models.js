@@ -2,12 +2,42 @@ import { userMention } from 'discord.js';
 import 'dotenv/config';
 import Groq from 'groq-sdk';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API});
+let groq = null; 
+if (process.env.GROQ_API) {
+    new Groq({ apiKey: process.env.GROQ_API });
+} else {
+    console.warn(`GROQ_API not set - Groq models are not avaliable.`)
+}
 
+
+//Free AI Models
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
 const HackClubModels = ['meta-llama/llama-3.3-70b-instruct']
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
+const openroute = ["openrouter/free"]
+
+async function callOpenRouter(messages) {
+    for (const model of openroute) {
+        try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${process.env.OPENROUTE_API}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model, messages}) 
+        });
+        const data = await response.json();
+        console.log(`OPENROUTER_API: ${data.model}`);
+        return { content: data.choices[0].message.content, model: data.model };
+    } catch (err) {
+        console.log(`OpenRouter model ${data.model} failed , ${err}`)
+    }
+}
+    throw new Error(`All OpenRouter models failed`)
+
+}
 
 async function callGroq(messages) {
     for (const model of groqModels) {
@@ -99,6 +129,12 @@ async function getAiResponse(messages) {
         return await callGemini(messages);
     } catch (err) {
         console.log(`GEMINI_API: Failed`)
+    }
+
+    try {
+        return await callOpenRouter(messages);
+    } catch (err) {
+        console.log(`OPENROUTER_API: Failed`)
     }
 
     throw new Error(`All AI providers failed`);
