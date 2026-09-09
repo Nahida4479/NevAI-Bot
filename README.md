@@ -72,7 +72,7 @@ You'll also need a [Discord Application](https://discord.com/developers/applicat
 GROQ_API=
 GEMINI_API=
 HACKCLUB_API=
-OPENROUTE_API=
+OPENROUTER_API=
 DISCORD_API=
 ```
 
