@@ -17,7 +17,7 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
 
-# AI models list
+# AI models list (only free models)
 
 **Gemini**
 - gemini-2.5-flash
@@ -29,6 +29,9 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 
 **HackClub**
 - meta-llama/llama-3.3-70b-instruct
+
+**Openrouter**
+- Free models (openrouter/free)
 
 ---
 
@@ -59,6 +62,7 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 - [Groq API](https://console.groq.com/keys)
 - [Gemini API](https://aistudio.google.com/api-keys)
 - [HackClub API](https://ai.hackclub.com/keys)
+- [OpenRouter](https://openrouter.ai)
 
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get your bot token.
 
@@ -68,6 +72,7 @@ You'll also need a [Discord Application](https://discord.com/developers/applicat
 GROQ_API=
 GEMINI_API=
 HACKCLUB_API=
+OPENROUTE_API=
 DISCORD_API=
 ```
 
