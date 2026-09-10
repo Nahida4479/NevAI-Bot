@@ -11,6 +11,7 @@ import { ensureEmojis } from './src/uploadEmoji.js';
 import { debugging } from './debug/debug.js';
 import { styleText } from 'node:util';
 import { json } from 'node:stream/consumers';
+import { stringify } from 'node:querystring';
 
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
@@ -129,7 +130,7 @@ client.on('messageCreate', async (message) => {
     try {
         await message.react(guildData.emoji || '🤔')
     } catch (err) {
-        console.log(`Discord react emoji error: ${err}`);
+        console.log(styleText(['red', 'bold'], `Discord react emoji error: ${err}`));
         debugging(JSON.stringify(messageToSend))
         await message.react('🤔')
     }
@@ -148,7 +149,9 @@ client.on('messageCreate', async (message) => {
         try {
         response = await getVisionAiResponse(visionMessage)
         } catch (err) {
-            console.log(err);
+            const err_vision = `Vision models error: ${err}`
+            console.log(styleText(['red', 'bold'], err_vision));
+            debugging(JSON.stringify(err_vision))
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
             return;
@@ -157,7 +160,9 @@ client.on('messageCreate', async (message) => {
         try {
         response = await getAiResponse(messageToSend)
         } catch (err) {
-            console.log(err);
+            const err_vision = `ALL AI models error: ${err}`
+            console.log(styleText(['red', 'bold'], err_vision));
+            debugging(JSON.stringify(err_vision))
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
             return;
