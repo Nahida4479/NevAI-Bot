@@ -1,6 +1,7 @@
 import { userMention } from 'discord.js';
 import 'dotenv/config';
 import Groq from 'groq-sdk';
+import { debugging } from '../debug/debug';
 
 let groq = null; 
 if (process.env.GROQ_API) {

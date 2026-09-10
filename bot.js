@@ -7,6 +7,8 @@ import { loadLanguage, languageCommand } from './locales/languages.js';
 import { Models } from 'groq-sdk/resources';
 import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
+// Debug
+import { debugging } from './debug/debug.js';
 
 const client = new Client({
     intents: [
@@ -75,6 +77,7 @@ client.on('messageCreate', async (message) => {
         await message.react(guildData.emoji || '🤔')
     } catch (err) {
         console.log(`Discord react emoji error: ${err}`);
+        debugging(JSON.stringify(messageToSend))
         await message.react('🤔')
     }
     
