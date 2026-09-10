@@ -1,13 +1,13 @@
 import { userMention } from 'discord.js';
 import 'dotenv/config';
 import Groq from 'groq-sdk';
-import { debugging } from '../debug/debug';
+import { debugging } from '../debug/debug.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
     new Groq({ apiKey: process.env.GROQ_API });
 } else {
-    console.warn(`GROQ_API not set - Groq models are not avaliable.`)
+    const err = console.warn(`GROQ_API not set - Groq models are not avaliable.`)
 }
 
 
@@ -33,7 +33,8 @@ async function callOpenRouter(messages) {
         console.log(`OPENROUTER_API: ${data.model}`);
         return { content: data.choices[0].message.content, model: data.model };
     } catch (err) {
-        console.log(`OpenRouter model ${data.model} failed , ${err}`)
+        const logs = console.log(`OpenRouter model ${data.model} failed , ${err}`)
+        debugging(JSON.stringify(logs))
     }
 }
     throw new Error(`All OpenRouter models failed`)
@@ -47,7 +48,8 @@ async function callGroq(messages) {
             console.log(`GROQ_API: ${model}`)
             return { content: response.choices[0].message.content, model: model };
         } catch(err) {
-            console.log(`Groq model ${model} failed, ${err}`);
+            const logs = console.log(`Groq model ${model} failed, ${err}`);
+            debugging(JSON.stringify(logs))
         }
     }
     throw new Error(`All Groq Api models failed`)
@@ -60,7 +62,8 @@ async function callGroqVisionModels(messages) {
             console.log(`GROQ_API_VISIONS_MODEL: ${model}`)
             return { content: response.choices[0].message.content, model: model }
         } catch (err) {
-            console.log(`GROQ_API_VISIONS_MODEL ${model} failed, ${err}`)
+            const logs = console.log(`GROQ_API_VISIONS_MODEL ${model} failed, ${err}`)
+            debugging(JSON.stringify(logs))
         }
     }
     throw new Error(`All Groq Api vision models failed`)
@@ -83,7 +86,8 @@ async function callGemini(messages) {
             console.log(`GEMINI_API: ${model}`);
             return { content: textStep.content[0].text, model: model };
         } catch (err) {
-            console.log(`Gemini model ${model} failed, ${err}`);
+            const logs = console.log(`Gemini model ${model} failed, ${err}`);
+            debugging(JSON.stringify(logs))
         }
     }
     throw Error(`All Gemini API models failed`)
@@ -105,7 +109,8 @@ async function callHackClub(messages) {
         console.log(`HACKCLUB_API: ${model}`);
         return { content: data.choices[0].message.content, model: model};
         } catch (err) {
-            console.log(`HackClub model ${model} failed ${err}`)
+            const logs = console.log(`HackClub model ${model} failed ${err}`)
+            debugging(JSON.stringify(logs))
         }
     }
     throw new Error(`All HackClub API models failed`)
@@ -117,25 +122,29 @@ async function getAiResponse(messages) {
     try {
         return await callGroq(messages);
     } catch (err) {
-        console.log(`GROQ_API: Failed`)
+        console.log(`GROQ_API: Failed ,`)
+        debugging(JSON.stringify(err))
     }
 
     try {
         return await callHackClub(messages);
     } catch (err) {
-        console.log(`HACKCLUB_API: Failed`)
+        console.log(`HACKCLUB_API: Failed,`)
+        debugging(JSON.stringify(err))
     }
 
     try {
         return await callGemini(messages);
     } catch (err) {
         console.log(`GEMINI_API: Failed`)
+        debugging(JSON.stringify(err))
     }
 
     try {
         return await callOpenRouter(messages);
     } catch (err) {
         console.log(`OPENROUTER_API: Failed`)
+        debugging(JSON.stringify(err))
     }
 
     throw new Error(`All AI providers failed`);
@@ -146,6 +155,7 @@ async function getVisionAiResponse(messages) {
         return await callGroqVisionModels(messages);
     } catch (err) {
         console.log(`GROQ_API_VISION_MODEL: Failed`)
+        debugging(JSON.stringify(err))
     }
     throw new Error(`All VISION AI providers failed`)
 }

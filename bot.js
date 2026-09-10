@@ -9,6 +9,13 @@ import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 // Debug
 import { debugging } from './debug/debug.js';
+import { styleText } from 'node:util';
+
+if (!process.env.DISCORD_API) {
+    console.warn(styleText(['red', 'bold'], 'DISCORD_API not detected. Please add your API!'))
+} else {
+    console.log(styleText(['green', 'bold'], 'DISCORD_API successful detected'))
+}
 
 const client = new Client({
     intents: [
@@ -28,7 +35,32 @@ process.on('uncaughtException', (reason) => {
 })
 
 client.once('clientReady', async () => {
+    if (!process.env.GEMINI_API) {
+        console.warn(styleText(['yellow', 'bold'], 'GEMINI_API not detected'))
+    } else {
+        console.log(styleText(['green', 'bold'], 'GEMINI_API successful detected'))
+    }
+
+    if (!process.env.GROQ_API) {
+        console.warn(styleText(['yellow', 'bold'], 'GROQ_API not detected'))
+    } else {
+        console.log(styleText(['green', 'bold'], 'GROQ_API successful detected'))
+    }
+
+    if (!process.env.HACKCLUB_API) {
+        console.warn(styleText(['yellow', 'bold'], 'HACKCLUB_API not detected'))
+    } else {
+        console.log(styleText(['green', 'bold'], 'HACKCLUB_API successful detected'))
+    }
+
+    if (!process.env.OPENROUTER_API) {
+        console.warn(styleText(['yellow', 'bold'], 'OPENROUTER_API not detected'))
+    } else {
+        console.log(styleText(['green', 'bold'], 'OPENROUTER_API successful detected'))
+    }
+
     console.log(`Login as ${client.user.tag}`)
+    if (process.env.DEBUG_MODE) console.warn(styleText(['yellow', 'bold'], `You are using a version with debug settings enabled.`))
     await ensureEmojis(client);
     console.log(client.application.emojis.cache.map(e => e.name));
 
