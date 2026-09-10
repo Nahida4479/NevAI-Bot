@@ -10,11 +10,22 @@ import { ensureEmojis } from './src/uploadEmoji.js';
 // Debug
 import { debugging } from './debug/debug.js';
 import { styleText } from 'node:util';
+import { json } from 'node:stream/consumers';
 
 if (!process.env.DISCORD_API) {
-    console.warn(styleText(['red', 'bold'], 'DISCORD_API not detected. Please add your API!'))
+    const err_message = 'DISCORD_API not detected. Please add your API!'
+    console.warn(styleText(['red', 'bold'], err_message))
+    debugging(JSON.stringify(err_message))
+    process.exit(1)
 } else {
     console.log(styleText(['green', 'bold'], 'DISCORD_API successful detected'))
+}
+
+if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
+    const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter)'
+    console.warn(styleText(['red', 'bold'], err_message))
+    debugging(JSON.stringify(err_message))
+    process.exit(1);
 }
 
 const client = new Client({
@@ -73,7 +84,12 @@ client.on('messageCreate', async (message) => {
     console.log('Message received:', message.content, 'from channel', message.channelId);
     const serverEmoji = message.guild.emojis.cache.map(e => `${e.name}: ${e}`).join(', ')
 
-    if (message.author.bot) return;
+    if (message.author.bot) {
+        const err_message1 = 'The bot tried to reply to another bot. Stop action!'
+        console.warn(styleText(['yellow', 'bold'], err_message1))
+        debugging(JSON.stringify(err_message1))
+        return;
+    }
     const data = loadData()
     const langCode = data[message.guildId]?.language || 'EN';
     const lang = loadLanguage(langCode);
@@ -87,7 +103,12 @@ client.on('messageCreate', async (message) => {
         return
     }
 
-    if (message.channelId !== guildData.channel) return;
+    if (message.channelId !== guildData.channel) {
+        const err_channel_message = 'The bot tried to respond on an undefined AI channel.'
+        console.warn(styleText(['yellow', 'bold'], err_channel_message))
+        debugging(JSON.stringify(err_channel_message))
+        return;
+    }
     if (!message.mentions.has(client.user)) return;
     console.log('Bot was mentioned on the correct channel');
 
