@@ -23,8 +23,11 @@ if (!process.env.DISCORD_API) {
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
     const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter)'
-    debug_log_err(err_message);
+    debug_log_err(err_message)
     process.exit(1);
+} else {
+    const success_message = 'AI models API found.'
+    debug_log_success(success_message);
 }
 
 const client = new Client({
@@ -65,17 +68,16 @@ client.once('clientReady', async () => {
         debug_log_warn(warn_openrouter);
     } 
 
-    console.log(`Login as ${client.user.tag}`)
+    console.log(styleText(['green', 'bold'], `Login as ${client.user.tag}`))
     if (process.env.DEBUG_MODE) console.warn(styleText(['yellow', 'bold'], `You are using a version with debug settings enabled.`))
     await ensureEmojis(client);
 
     await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON(), logsCommand.toJSON(), helpCommand.toJSON()]);
-    console.log((['green', 'bold'], 'Command /ai /language /ai_settings /logs /help registered'));
+    console.log(styleText(['green', 'bold'], 'Command /ai /language /ai_settings /logs /help registered'));
 })
 
 
 client.on('messageCreate', async (message) => {
-    console.log('Message received:', message.content, 'from channel', message.channelId);
     const serverEmoji = message.guild.emojis.cache.map(e => `${e.name}: ${e}`).join(', ')
 
     if (message.author.bot) {
