@@ -1,13 +1,14 @@
 import { userMention } from 'discord.js';
 import 'dotenv/config';
 import Groq from 'groq-sdk';
-import { debugging } from '../debug/debug.js';
+import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
     new Groq({ apiKey: process.env.GROQ_API });
 } else {
     const err = console.warn(`GROQ_API not set - Groq models are not avaliable.`)
+    debug_log_warn(err)
 }
 
 

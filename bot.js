@@ -8,24 +8,22 @@ import { Models } from 'groq-sdk/resources';
 import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 // Debug
-import { debugging } from './debug/debug.js';
+import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
-import { json } from 'node:stream/consumers';
-import { stringify } from 'node:querystring';
+
 
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
-    console.warn(styleText(['red', 'bold'], err_message))
-    debugging(JSON.stringify(err_message))
+    debug_log_err(err_message)
     process.exit(1)
 } else {
-    console.log(styleText(['green', 'bold'], 'DISCORD_API successful detected'))
+    const success_message = 'DISCORD_API successful detected'
+    debug_log_success(success_message);
 }
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
     const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter)'
-    console.warn(styleText(['red', 'bold'], err_message))
-    debugging(JSON.stringify(err_message))
+    debug_log_err(err_message);
     process.exit(1);
 }
 
@@ -39,45 +37,40 @@ const client = new Client({
 })
 
 process.on('unhandledRejection', (reason) => {
-    console.log(reason);
+    debug_log_err(reason)
 });
 
 process.on('uncaughtException', (reason) => {
-    console.log(reason);
+    debug_log_err(reason)
 })
 
 client.once('clientReady', async () => {
     if (!process.env.GEMINI_API) {
-        console.warn(styleText(['yellow', 'bold'], 'GEMINI_API not detected'))
-    } else {
-        console.log(styleText(['green', 'bold'], 'GEMINI_API successful detected'))
-    }
+        const warn_gemini = 'GEMINI_API not detected';
+        debug_log_warn(warn_gemini)
+    } 
 
     if (!process.env.GROQ_API) {
-        console.warn(styleText(['yellow', 'bold'], 'GROQ_API not detected'))
-    } else {
-        console.log(styleText(['green', 'bold'], 'GROQ_API successful detected'))
-    }
+        const warn_groq = 'GROQ_API not detected';
+        debug_log_warn(warn_groq);
+    } 
 
     if (!process.env.HACKCLUB_API) {
-        console.warn(styleText(['yellow', 'bold'], 'HACKCLUB_API not detected'))
-    } else {
-        console.log(styleText(['green', 'bold'], 'HACKCLUB_API successful detected'))
-    }
+        const warn_hackclub = 'HACKCLUB_API not detected';
+        debug_log_warn(warn_hackclub)
+    } 
 
     if (!process.env.OPENROUTER_API) {
-        console.warn(styleText(['yellow', 'bold'], 'OPENROUTER_API not detected'))
-    } else {
-        console.log(styleText(['green', 'bold'], 'OPENROUTER_API successful detected'))
-    }
+        const warn_openrouter = 'OPENROUTER_API not detected';
+        debug_log_warn(warn_openrouter);
+    } 
 
     console.log(`Login as ${client.user.tag}`)
     if (process.env.DEBUG_MODE) console.warn(styleText(['yellow', 'bold'], `You are using a version with debug settings enabled.`))
     await ensureEmojis(client);
-    console.log(client.application.emojis.cache.map(e => e.name));
 
     await client.application.commands.set([aiCommand.toJSON(), languageCommand.toJSON(), aiSettingsCommand.toJSON(), logsCommand.toJSON(), helpCommand.toJSON()]);
-    console.log('Command /ai /language /ai_settings /logs /help registered');
+    console.log((['green', 'bold'], 'Command /ai /language /ai_settings /logs /help registered'));
 })
 
 
@@ -87,8 +80,7 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot) {
         const err_message1 = 'The bot tried to reply to another bot. Stop action!'
-        console.warn(styleText(['yellow', 'bold'], err_message1))
-        debugging(JSON.stringify(err_message1))
+        debug_log_warn(err_message1)
         return;
     }
     const data = loadData()
@@ -106,12 +98,10 @@ client.on('messageCreate', async (message) => {
 
     if (message.channelId !== guildData.channel) {
         const err_channel_message = 'The bot tried to respond on an undefined AI channel.'
-        console.warn(styleText(['yellow', 'bold'], err_channel_message))
-        debugging(JSON.stringify(err_channel_message))
+        debug_log_warn(err_channel_message)
         return;
     }
     if (!message.mentions.has(client.user)) return;
-    console.log('Bot was mentioned on the correct channel');
 
     if (!guildData.history) {
         guildData.history = [];
@@ -130,8 +120,8 @@ client.on('messageCreate', async (message) => {
     try {
         await message.react(guildData.emoji || '🤔')
     } catch (err) {
-        console.log(styleText(['red', 'bold'], `Discord react emoji error: ${err}`));
-        debugging(JSON.stringify(messageToSend))
+        const err_emojiss = `Discord react emoji error: ${err}`
+        debug_log_err(err_emojiss)
         await message.react('🤔')
     }
     
@@ -150,8 +140,7 @@ client.on('messageCreate', async (message) => {
         response = await getVisionAiResponse(visionMessage)
         } catch (err) {
             const err_vision = `Vision models error: ${err}`
-            console.log(styleText(['red', 'bold'], err_vision));
-            debugging(JSON.stringify(err_vision))
+            debug_log_err(err_vision);
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
             return;
@@ -161,8 +150,7 @@ client.on('messageCreate', async (message) => {
         response = await getAiResponse(messageToSend)
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
-            console.log(styleText(['red', 'bold'], err_vision));
-            debugging(JSON.stringify(err_vision))
+            debug_log_err(err_vision);
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
             return;

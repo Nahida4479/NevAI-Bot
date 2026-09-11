@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { styleText } from 'util';
 
 const MAX_SIZE = 1024 * 1024 * 1024;
 
@@ -8,7 +9,21 @@ function deleteOldestLine() {
     fs.writeFileSync('debug.log', half.join('\n'));
 }
 
-export function debugging(message) {
+function debug_log_err(msg) {
+    console.log(styleText(['red', 'bold'], msg));
+    debugging(msg)
+}
+
+function debug_log_warn(msg) {
+    console.log(styleText(['yellow', 'bold'], msg))
+    debugging(msg)
+}
+
+function debug_log_success(msg) {
+    console.log(styleText(['green', 'bold'], msg))
+}
+
+function debugging(message) {
     if (process.env.DEBUG_MODE !== 'true') return;
     const line = `[${new Date().toISOString()}] ${message}\n`
     fs.appendFileSync(`debug.log`, line)
@@ -18,3 +33,5 @@ export function debugging(message) {
         deleteOldestLine();
     }
 }
+
+export {debugging, debug_log_err, debug_log_success, debug_log_warn}
