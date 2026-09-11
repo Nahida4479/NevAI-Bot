@@ -26,9 +26,11 @@ if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_AP
     debug_log_err(err_message)
     process.exit(1);
 } else {
-    const success_message = 'AI models API found.'
-    debug_log_success(success_message);
+    const success_message = 'AI models APIs found.'
+    debugging(success_message)
+    console.log(styleText(['blue', 'bold'], success_message))
 }
+
 
 const client = new Client({
     intents: [
@@ -68,7 +70,7 @@ client.once('clientReady', async () => {
         debug_log_warn(warn_openrouter);
     } 
 
-    console.log(styleText(['green', 'bold'], `Login as ${client.user.tag}`))
+    console.log(styleText(['magenta', 'bold'], `Login as ${client.user.tag}`))
     if (process.env.DEBUG_MODE) console.warn(styleText(['yellow', 'bold'], `You are using a version with debug settings enabled.`))
     await ensureEmojis(client);
 
@@ -82,7 +84,7 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot) {
         const err_message1 = 'The bot tried to reply to another bot. Stop action!'
-        debug_log_warn(err_message1)
+        debugging(err_message1);
         return;
     }
     const data = loadData()
@@ -124,6 +126,7 @@ client.on('messageCreate', async (message) => {
     } catch (err) {
         const err_emojiss = `Discord react emoji error: ${err}`
         debug_log_err(err_emojiss)
+        debugging(err)
         await message.react('🤔')
     }
     
@@ -143,6 +146,7 @@ client.on('messageCreate', async (message) => {
         } catch (err) {
             const err_vision = `Vision models error: ${err}`
             debug_log_err(err_vision);
+            debugging(err)
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
             return;
@@ -153,11 +157,14 @@ client.on('messageCreate', async (message) => {
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
             debug_log_err(err_vision);
+            debugging(err)
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
             return;
         }
     }
+
+    debugging(` \n User: ${message.content} \n AI Response: ${response.content} \n Model: ${response.model}`)
 
     if (guildData.logschannel) {
         const logChannel = client.channels.cache.get(guildData.logschannel)
