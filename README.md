@@ -74,6 +74,7 @@ GEMINI_API=
 HACKCLUB_API=
 OPENROUTER_API=
 DISCORD_API=
+DEBUG_MODE= #true/false
 ```
 
 # Running
