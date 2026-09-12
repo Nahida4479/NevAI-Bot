@@ -10,6 +10,8 @@ import { ensureEmojis } from './src/uploadEmoji.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
+import { readFileSync } from 'node:fs';
+import fs from 'fs';
 
 
 if (!process.env.DISCORD_API) {
@@ -19,6 +21,11 @@ if (!process.env.DISCORD_API) {
 } else {
     const success_message = 'DISCORD_API successful detected'
     debug_log_success(success_message);
+    const n_verson = process.version;
+    const p_version = process.platform;
+    console.log(styleText(['magenta', 'bold'], `Node version:${n_verson} System:${p_version}`))
+    const pkg_read = JSON.parse(readFileSync('./package.json', 'utf-8'));
+    debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
 }
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
@@ -40,6 +47,7 @@ const client = new Client({
         GatewayIntentBits.GuildEmojisAndStickers
     ]
 })
+
 
 process.on('unhandledRejection', (reason) => {
     debug_log_err(reason)
