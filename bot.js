@@ -138,6 +138,8 @@ client.on('messageCreate', async (message) => {
         await message.react('🤔')
     }
     
+    const startTime = Date.now()
+
     let response;
     if (message.attachments.size > 0) {
         const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
@@ -173,6 +175,8 @@ client.on('messageCreate', async (message) => {
     }
 
     debugging(` \n User: ${message.content} \n AI Response: ${response.content} \n Model: ${response.model}`)
+    const duration = Date.now() - startTime;
+    debugging(`[Guild: ${message.guildId} | Channel: ${message.channelId}] AI response time: ${duration}ms`)
 
     if (guildData.logschannel) {
         const logChannel = client.channels.cache.get(guildData.logschannel)
