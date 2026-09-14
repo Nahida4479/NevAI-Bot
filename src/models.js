@@ -3,7 +3,7 @@ import 'dotenv/config';
 import Groq from 'groq-sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
-import { tools } from './exa_ai_search_logic.js';
+import { exa_request, tools } from './exa_ai_search_logic.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -47,17 +47,32 @@ async function callOpenRouter(messages) {
 async function callGroq(messages) {
     for (const model of groqModels) {
         try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden", tools: tools });
+            let response = await groq.chat.completions.create({ messages, model, tools: tools });
 
-            const message = response.choices[0].message;
+            let message = response.choices[0].message;
 
             if (message.tool_calls) {
                 const toolCall = message.tool_calls[0];
                 const args = JSON.parse(toolCall.function.arguments);
-                const query = args.query;
+                const query = args.query || '';
                 const query_success = `The model wants to search:, ${query}`;
                 debug_log_success(query_success);
+                if (!query) {
+                    return { content: "I tried to search but didn't have a clear query.", model: model }; 
+                }
+
+                const searchResult = await exa_request(query);
+
+                const followUpMessage = [
+                    ...messages,
+                    message,
+                    { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" })}
+                ]
+
+                    response = await groq.chat.completions.create({ messages: followUpMessage, model, tools});
+                    message = response.choices[0].message;
             }
+
             const tool_response = `Tool calls:', ${JSON.stringify(response.choices[0].message.tool_calls, null, 2)}`
             debugging(tool_response)
 

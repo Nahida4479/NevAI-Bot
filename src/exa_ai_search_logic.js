@@ -13,7 +13,6 @@ async function call_exa (ai_question) {
             highlights: true,
         },
     });
-    console.log(result)
     debugging(JSON.stringify(result))
 } catch (err) {
     const error_exa = `EXA error, ${err}`
@@ -38,7 +37,7 @@ const tools = [
         function: {
             name: 'search_web',
             description: 'Search the internet for current, up-to-date, or factual information you dont already know.',
-            parametrs: {
+            parameters: {
                 type: "object",
                 properties: {
                     query: {
