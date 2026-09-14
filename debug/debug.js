@@ -10,17 +10,17 @@ function deleteOldestLine() {
 }
 
 function debug_log_err(msg) {
-    console.log(styleText(['red', 'bold'], msg));
+    console.log(styleText(['red', 'bold'], `${msg}`));
     debugging(msg)
 }
 
 function debug_log_warn(msg) {
-    console.log(styleText(['yellow', 'bold'], msg))
+    console.log(styleText(['yellow', 'bold'], `${ msg }`))
     debugging(msg)
 }
 
 function debug_log_success(msg) {
-    console.log(styleText(['green', 'bold'], msg))
+    console.log(styleText(['green', 'bold'], `${msg}`))
 }
 
 function debugging(message) {

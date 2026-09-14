@@ -68,6 +68,11 @@ client.once('clientReady', async () => {
         debug_log_warn(warn_groq);
     } 
 
+    if (!process.env.EXA_API) {
+        const warn_exe = 'EXA_API not detected. The bot will not be able to search for information on the internet.'
+        debug_log_warn(warn_exe)
+    }
+
     if (!process.env.HACKCLUB_API) {
         const warn_hackclub = 'HACKCLUB_API not detected';
         debug_log_warn(warn_hackclub)
@@ -166,6 +171,7 @@ client.on('messageCreate', async (message) => {
         ];
         try {
         response = await getVisionAiResponse(visionMessage)
+        await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `Vision models error: ${err}`
             debug_log_err(err_vision);
@@ -177,6 +183,7 @@ client.on('messageCreate', async (message) => {
     } else {
         try {
         response = await getAiResponse(messageToSend)
+        await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
             debug_log_err(err_vision);
@@ -199,6 +206,7 @@ client.on('messageCreate', async (message) => {
             .addFields(
                 { name: 'User message', value: message.content || `${lang.noMessageContent}`},
                 { name: 'Model', value: response.model},
+                { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}`  },
             )
             .setTimestamp();
 

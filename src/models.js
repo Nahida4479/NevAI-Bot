@@ -3,6 +3,7 @@ import 'dotenv/config';
 import Groq from 'groq-sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
+import { exa_request, tools } from './exa_ai_search_logic.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -22,20 +23,52 @@ const openroute = ["openrouter/free"]
 
 async function callOpenRouter(messages) {
     for (const model of openroute) {
+        let usedInternetSearch = false;
         try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${process.env.OPENROUTER_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages}) 
+            body: JSON.stringify({ model, messages, tools}) 
         });
-        const data = await response.json();
+        let data = await response.json();
+        let message = data.choices[0].message;
+
+        if (message.tool_calls) {
+            usedInternetSearch = true;
+            const toolCall = message.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            const query = args.query || '';
+            if (!query) {
+                return { content: "I tried to search but didn't have a clear query.", model: model };
+            }
+        
+
+        const searchResult = await exa_request(query);
+        const followUpMessage = [
+            ...messages,
+            message,
+            { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+        ]
+
+            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.OPENROUTER_API}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages: followUpMessage, tools})
+            })
+        data = await response.json();
+        message = data.choices[0].message;
+
+        }
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
-        return { content: data.choices[0].message.content, model: data.model };
+        return { content: data.choices[0].message.content, model: data.model, usedInternetSearch: usedInternetSearch };
     } catch (err) {
-        const logs_err = `OpenRouter model ${data.model} failed ${err}`
+        const logs_err = `OpenRouter model ${model} failed ${err}`
         debug_log_err(logs_err)
     }
 }
@@ -45,11 +78,41 @@ async function callOpenRouter(messages) {
 
 async function callGroq(messages) {
     for (const model of groqModels) {
+        let usedInternetSearch = false;
         try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden" });
+            let response = await groq.chat.completions.create({ messages, model, tools: tools });
+
+            let message = response.choices[0].message;
+
+            if (message.tool_calls) {
+                const toolCall = message.tool_calls[0];
+                const args = JSON.parse(toolCall.function.arguments);
+                const query = args.query || '';
+                const query_success = `The model wants to search:, ${query}`;
+                debug_log_success(query_success);
+                usedInternetSearch = true;
+                if (!query) {
+                    return { content: "I tried to search but didn't have a clear query.", model: model }; 
+                }
+
+                const searchResult = await exa_request(query);
+
+                const followUpMessage = [
+                    ...messages,
+                    message,
+                    { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" })}
+                ]
+
+                    response = await groq.chat.completions.create({ messages: followUpMessage, model, tools});
+                    message = response.choices[0].message;
+            }
+
+            const tool_response = `Tool calls:', ${JSON.stringify(response.choices[0].message.tool_calls, null, 2)}`
+            debugging(tool_response)
+
             const model_groq_api = `GROQ_API: ${model}`
             console.log(styleText(['greenBright', 'bold'], model_groq_api));
-            return { content: response.choices[0].message.content, model: model };
+            return { content: response.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch };
         } catch(err) {
             const logs_groq_message = `Groq model ${model} failed, ${err}`;
             debug_log_err(logs_groq_message)
@@ -99,18 +162,50 @@ async function callGemini(messages) {
 async function callHackClub(messages) {
         for (const model of HackClubModels) {
 
+        let usedInternetSearch = false;
             try {
-        const respond = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+        let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${process.env.HACKCLUB_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages })
+            body: JSON.stringify({ model, messages, tools })
         });
-        const data = await respond.json();
+        let data = await response.json();
+        let message = data.choices[0].message;
+
+        if (message.tool_calls) {
+            usedInternetSearch = true;
+            const toolCall = message.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            const query = args.query || '';
+            if (!query) {
+                return { content: "I tried to search but didn't have a clear query.", model: model };
+            }
+
+
+            const searchResult = await exa_request(query);
+            const followUpMessage = [
+                ...messages,
+                message,
+                { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+            ]
+
+            response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.HACKCLUB_API}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages: followUpMessage, tools })
+            })
+            data = await response.json();
+            message = data.choices[0].message;
+
+        }
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
-        return { content: data.choices[0].message.content, model: model};
+        return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch};
         } catch (err) {
             const logs_hackclub = `HackClub model ${model} failed ${err}`
             debug_log_err(logs_hackclub)
@@ -137,17 +232,17 @@ async function getAiResponse(messages) {
     }
 
     try {
-        return await callGemini(messages);
-    } catch (err) {
-        const failed_ge = `GEMINI_API: Failed`
-        debug_log_err(failed_ge)
-    }
-
-    try {
         return await callOpenRouter(messages);
     } catch (err) {
         const failed_opr = `OPENROUTER_API: Failed`
         debug_log_err(failed_opr)
+    }
+
+    try {
+        return await callGemini(messages);
+    } catch (err) {
+        const failed_ge = `GEMINI_API: Failed`
+        debug_log_err(failed_ge)
     }
 
     throw new Error(`All AI providers failed`);
