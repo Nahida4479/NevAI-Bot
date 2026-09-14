@@ -48,6 +48,19 @@ async function callGroq(messages) {
     for (const model of groqModels) {
         try {
             const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden", tools: tools });
+
+            const message = response.choices[0].message;
+
+            if (message.tool_calls) {
+                const toolCall = message.tool_calls[0];
+                const args = JSON.parse(toolCall.function.arguments);
+                const query = args.query;
+                const query_success = `The model wants to search:, ${query}`;
+                debug_log_success(query_success);
+            }
+            const tool_response = `Tool calls:', ${JSON.stringify(response.choices[0].message.tool_calls, null, 2)}`
+            debugging(tool_response)
+
             const model_groq_api = `GROQ_API: ${model}`
             console.log(styleText(['greenBright', 'bold'], model_groq_api));
             return { content: response.choices[0].message.content, model: model };
@@ -138,17 +151,17 @@ async function getAiResponse(messages) {
     }
 
     try {
-        return await callGemini(messages);
-    } catch (err) {
-        const failed_ge = `GEMINI_API: Failed`
-        debug_log_err(failed_ge)
-    }
-
-    try {
         return await callOpenRouter(messages);
     } catch (err) {
         const failed_opr = `OPENROUTER_API: Failed`
         debug_log_err(failed_opr)
+    }
+
+    try {
+        return await callGemini(messages);
+    } catch (err) {
+        const failed_ge = `GEMINI_API: Failed`
+        debug_log_err(failed_ge)
     }
 
     throw new Error(`All AI providers failed`);

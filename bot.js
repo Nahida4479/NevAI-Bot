@@ -166,6 +166,7 @@ client.on('messageCreate', async (message) => {
         ];
         try {
         response = await getVisionAiResponse(visionMessage)
+        await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `Vision models error: ${err}`
             debug_log_err(err_vision);
@@ -177,6 +178,7 @@ client.on('messageCreate', async (message) => {
     } else {
         try {
         response = await getAiResponse(messageToSend)
+        await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
             debug_log_err(err_vision);
