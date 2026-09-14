@@ -32,5 +32,24 @@ async function exa_request(ai_question) {
     return exa_final_data;
 }
 
+const tools = [
+    {
+        type: 'function',
+        function: {
+            name: 'search_web',
+            description: 'Search the internet for current, up-to-date, or factual information you dont already know.',
+            parametrs: {
+                type: "object",
+                properties: {
+                    query: {
+                        type: 'string',
+                        description: "The search query to look up"
+                    }
+                },
+                required: ["query"]
+            }
+        }
+    }
+];
 
-export { call_exa, exa_request }
+export { call_exa, exa_request, tools }

@@ -3,6 +3,7 @@ import 'dotenv/config';
 import Groq from 'groq-sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
+import { tools } from './exa_ai_search_logic.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -29,7 +30,7 @@ async function callOpenRouter(messages) {
                 Authorization: `Bearer ${process.env.OPENROUTER_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages}) 
+            body: JSON.stringify({ model, messages, tools}) 
         });
         const data = await response.json();
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
@@ -46,7 +47,7 @@ async function callOpenRouter(messages) {
 async function callGroq(messages) {
     for (const model of groqModels) {
         try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden" });
+            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden", tools: tools });
             const model_groq_api = `GROQ_API: ${model}`
             console.log(styleText(['greenBright', 'bold'], model_groq_api));
             return { content: response.choices[0].message.content, model: model };
@@ -61,7 +62,7 @@ async function callGroq(messages) {
 async function callGroqVisionModels(messages) {
     for (const model of visionModel) {
         try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
+            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden", tools: tools});
             console.log(styleText(['greenBright', 'bold'], `GROQ_API_VISIONS_MODEL: ${model}`));
             return { content: response.choices[0].message.content, model: model }
         } catch (err) {
@@ -106,7 +107,7 @@ async function callHackClub(messages) {
                 'Authorization': `Bearer ${process.env.HACKCLUB_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages })
+            body: JSON.stringify({ model, messages, tools })
         });
         const data = await respond.json();
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
