@@ -2,7 +2,12 @@ import Exa from "exa-js";
 import 'dotenv/config'
 import { debugging, debug_log_success, debug_log_err } from "../debug/debug.js";
 
-const exa = new Exa(process.env.EXA_API)
+if (!process.env.EXA_API) {
+    const no_api_exe = "EXA_API not detected. The bot will not be able to search for information on the internet."
+    debugging(no_api_exe)
+} else {
+    const exa = new Exa(process.env.EXA_API)
+}
 
 async function call_exa (ai_question) {
     let result;
@@ -31,7 +36,7 @@ async function exa_request(ai_question) {
     return exa_final_data;
 }
 
-const tools = [
+const tools = process.env.EXA_API ? [
     {
         type: 'function',
         function: {
@@ -49,6 +54,6 @@ const tools = [
             }
         }
     }
-];
+] : undefined;
 
 export { call_exa, exa_request, tools }

@@ -68,6 +68,11 @@ client.once('clientReady', async () => {
         debug_log_warn(warn_groq);
     } 
 
+    if (!process.env.EXA_API) {
+        const warn_exe = 'EXA_API not detected. The bot will not be able to search for information on the internet.'
+        debug_log_warn(warn_exe)
+    }
+
     if (!process.env.HACKCLUB_API) {
         const warn_hackclub = 'HACKCLUB_API not detected';
         debug_log_warn(warn_hackclub)
