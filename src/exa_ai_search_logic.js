@@ -1,6 +1,6 @@
 import Exa from "exa-js";
 import 'dotenv/config'
-import { debugging, debug_log_success, debug_log_err } from "./debug/debug.js";
+import { debugging, debug_log_success, debug_log_err } from "../debug/debug.js";
 
 const exa = new Exa(process.env.EXA_API)
 
@@ -25,17 +25,11 @@ return result;
 }
 
 async function exa_request(ai_question) {
-    try {
     const exa_final_data = await call_exa(ai_question);
     debugging(JSON.stringify(exa_final_data))
     const exa_success = 'EXA success'
     debug_log_success(exa_success);
-
-    } catch (err) {
-        debugging(err)
-        const error_exa = `EXA error, ${err}`
-        debug_log_err(error_exa)
-    }
+    return exa_final_data;
 }
 
 
