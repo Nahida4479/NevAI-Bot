@@ -10,6 +10,8 @@ import { ensureEmojis } from './src/uploadEmoji.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
+import { readFileSync } from 'node:fs';
+import fs from 'fs';
 
 
 if (!process.env.DISCORD_API) {
@@ -19,6 +21,11 @@ if (!process.env.DISCORD_API) {
 } else {
     const success_message = 'DISCORD_API successful detected'
     debug_log_success(success_message);
+    const n_verson = process.version;
+    const p_version = process.platform;
+    console.log(styleText(['magenta', 'bold'], `Node version:${n_verson} System:${p_version}`))
+    const pkg_read = JSON.parse(readFileSync('./package.json', 'utf-8'));
+    debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
 }
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
@@ -40,6 +47,7 @@ const client = new Client({
         GatewayIntentBits.GuildEmojisAndStickers
     ]
 })
+
 
 process.on('unhandledRejection', (reason) => {
     debug_log_err(reason)
@@ -111,7 +119,20 @@ client.on('messageCreate', async (message) => {
         guildData.history = [];
     }
 
-    guildData.history.push({ role: 'user', content: message.content });
+    const attachment_txt = message.attachments.filter(a => a.contentType?.startsWith('text/plain')).map(a => a.url);
+
+    let txtContent = '';
+    if (attachment_txt.length > 0) {
+        const txtResponse = await fetch(attachment_txt[0]);
+        txtContent = await txtResponse.text()
+    }
+
+    let messageContent = message.content;
+    if (txtContent) {
+        messageContent = `${messageContent}\n\nAttached file content: \n${txtContent}`;
+    }
+
+    guildData.history.push({ role: 'user', content: messageContent });
 
     const basePrompt = `You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. `
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
@@ -130,11 +151,13 @@ client.on('messageCreate', async (message) => {
         await message.react('🤔')
     }
     
+    const startTime = Date.now()
+
     let response;
     if (message.attachments.size > 0) {
         const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
         const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
-        const textPart = { type: "text", text: message.content };
+        const textPart = { type: "text", text: messageContent };
         const createPart = [textPart, ...imageParts]
 
         const visionMessage = [
@@ -165,6 +188,8 @@ client.on('messageCreate', async (message) => {
     }
 
     debugging(` \n User: ${message.content} \n AI Response: ${response.content} \n Model: ${response.model}`)
+    const duration = Date.now() - startTime;
+    debugging(`[Guild: ${message.guildId} | Channel: ${message.channelId}] AI response time: ${duration}ms`)
 
     if (guildData.logschannel) {
         const logChannel = client.channels.cache.get(guildData.logschannel)
