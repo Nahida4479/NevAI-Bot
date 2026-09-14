@@ -119,7 +119,20 @@ client.on('messageCreate', async (message) => {
         guildData.history = [];
     }
 
-    guildData.history.push({ role: 'user', content: message.content });
+    const attachment_txt = message.attachments.filter(a => a.contentType?.startsWith('text/plain')).map(a => a.url);
+
+    let txtContent = '';
+    if (attachment_txt.length > 0) {
+        const txtResponse = await fetch(attachment_txt[0]);
+        txtContent = await txtResponse.text()
+    }
+
+    let messageContent = message.content;
+    if (txtContent) {
+        messageContent = `${messageContent}\n\nAttached file content: \n${txtContent}`;
+    }
+
+    guildData.history.push({ role: 'user', content: messageContent });
 
     const basePrompt = `You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. `
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
@@ -144,7 +157,7 @@ client.on('messageCreate', async (message) => {
     if (message.attachments.size > 0) {
         const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
         const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
-        const textPart = { type: "text", text: message.content };
+        const textPart = { type: "text", text: messageContent };
         const createPart = [textPart, ...imageParts]
 
         const visionMessage = [
