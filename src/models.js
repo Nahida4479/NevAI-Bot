@@ -23,6 +23,7 @@ const openroute = ["openrouter/free"]
 
 async function callOpenRouter(messages) {
     for (const model of openroute) {
+        let usedInternetSearch = false;
         try {
         let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -36,6 +37,7 @@ async function callOpenRouter(messages) {
         let message = data.choices[0].message;
 
         if (message.tool_calls) {
+            usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
             const query = args.query || '';
@@ -64,7 +66,7 @@ async function callOpenRouter(messages) {
 
         }
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
-        return { content: data.choices[0].message.content, model: data.model };
+        return { content: data.choices[0].message.content, model: data.model, usedInternetSearch: usedInternetSearch };
     } catch (err) {
         const logs_err = `OpenRouter model ${model} failed ${err}`
         debug_log_err(logs_err)
@@ -76,6 +78,7 @@ async function callOpenRouter(messages) {
 
 async function callGroq(messages) {
     for (const model of groqModels) {
+        let usedInternetSearch = false;
         try {
             let response = await groq.chat.completions.create({ messages, model, tools: tools });
 
@@ -87,6 +90,7 @@ async function callGroq(messages) {
                 const query = args.query || '';
                 const query_success = `The model wants to search:, ${query}`;
                 debug_log_success(query_success);
+                usedInternetSearch = true;
                 if (!query) {
                     return { content: "I tried to search but didn't have a clear query.", model: model }; 
                 }
@@ -108,7 +112,7 @@ async function callGroq(messages) {
 
             const model_groq_api = `GROQ_API: ${model}`
             console.log(styleText(['greenBright', 'bold'], model_groq_api));
-            return { content: response.choices[0].message.content, model: model };
+            return { content: response.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch };
         } catch(err) {
             const logs_groq_message = `Groq model ${model} failed, ${err}`;
             debug_log_err(logs_groq_message)
@@ -158,6 +162,7 @@ async function callGemini(messages) {
 async function callHackClub(messages) {
         for (const model of HackClubModels) {
 
+        let usedInternetSearch = false;
             try {
         let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
             method: "POST",
@@ -171,6 +176,7 @@ async function callHackClub(messages) {
         let message = data.choices[0].message;
 
         if (message.tool_calls) {
+            usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
             const query = args.query || '';
@@ -199,7 +205,7 @@ async function callHackClub(messages) {
 
         }
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
-        return { content: data.choices[0].message.content, model: model};
+        return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch};
         } catch (err) {
             const logs_hackclub = `HackClub model ${model} failed ${err}`
             debug_log_err(logs_hackclub)

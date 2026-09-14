@@ -206,6 +206,7 @@ client.on('messageCreate', async (message) => {
             .addFields(
                 { name: 'User message', value: message.content || `${lang.noMessageContent}`},
                 { name: 'Model', value: response.model},
+                { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}`  },
             )
             .setTimestamp();
 

@@ -2,11 +2,12 @@ import Exa from "exa-js";
 import 'dotenv/config'
 import { debugging, debug_log_success, debug_log_err } from "../debug/debug.js";
 
+let exa = null;
 if (!process.env.EXA_API) {
     const no_api_exe = "EXA_API not detected. The bot will not be able to search for information on the internet."
     debugging(no_api_exe)
 } else {
-    const exa = new Exa(process.env.EXA_API)
+    exa = new Exa(process.env.EXA_API)
 }
 
 async function call_exa (ai_question) {
@@ -41,7 +42,7 @@ const tools = process.env.EXA_API ? [
         type: 'function',
         function: {
             name: 'search_web',
-            description: 'Search the internet for current, up-to-date, or factual information you dont already know.',
+            description: 'ALWAYS use this tool for weather, game information, game character build, current events, sports scores, news, prices, or any question about "today" or real- time information.You do NOT have real- time data access — never guess or make up current facts.',
             parameters: {
                 type: "object",
                 properties: {
@@ -55,5 +56,6 @@ const tools = process.env.EXA_API ? [
         }
     }
 ] : undefined;
+
 
 export { call_exa, exa_request, tools }
