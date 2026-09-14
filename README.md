@@ -1,6 +1,10 @@
 # NevAI
 
-A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models, remembering the last 15 messages for context.
+<a href="https://discord.com/invite/CttU24eg3F">
+    <img src="./public/nevai-discord-banner.png" style="width: 100%;">
+</a>
+
+**A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models, remembering the last 15 messages for context.**
 
 # Features
 
@@ -16,31 +20,41 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 - The bot saves the last 15 messages for chat context.
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
+- Responds using `Exa.ai`.
 
 # AI models list (only free models)
 
 **Gemini**
-- gemini-2.5-flash
-- gemini-2.5-flash-lite
+```yaml
+gemini-2.5-flash
+gemini-2.5-flash-lite
+```
 
 **Groq**
-- openai/gpt-oss-120b 
-- openai/gpt-oss-20b
+```yaml
+openai/gpt-oss-120b 
+openai/gpt-oss-20b
+```
 
 **HackClub**
-- meta-llama/llama-3.3-70b-instruct
+```yaml
+meta-llama/llama-3.3-70b-instruct
+```
 
 **Openrouter**
-- Free models (openrouter/free)
+```yaml
+Free models (openrouter/free)
+```
 
 ---
 
 ## Models for vision
 
 **Groq**
-- qwen/qwen3.6-27b 
-- qwen/qwen3.8-27b
-
+```yaml
+qwen/qwen3.6-27b 
+qwen/qwen3.8-27b
+```
 
 # Commands
 
@@ -59,20 +73,23 @@ A Discord bot that lets admins set an AI channel per server, mention it and it r
 ### API
 **Minimum 1 of the listed AI APIs:**
 
-- [Groq API](https://console.groq.com/keys)
-- [Gemini API](https://aistudio.google.com/api-keys)
-- [HackClub API](https://ai.hackclub.com/keys)
-- [OpenRouter](https://openrouter.ai)
 
-You'll also need a [Discord Application](https://discord.com/developers/applications) to get your bot token.
+ [Groq API](https://console.groq.com/keys) **|**
+ [Gemini API](https://aistudio.google.com/api-keys) **|**
+ [HackClub API](https://ai.hackclub.com/keys) **|**
+ [OpenRouter](https://openrouter.ai)
+
+
+You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__.
 
 ## Env
 
-```
+```bash
 GROQ_API=
 GEMINI_API=
 HACKCLUB_API=
 OPENROUTER_API=
+EXA_API=
 DISCORD_API=
 DEBUG_MODE= #true/false
 ```
@@ -82,14 +99,14 @@ DEBUG_MODE= #true/false
 ## Docker
 1. Create `.env` file
 
-```
+```dockerfile
 docker pull ghcr.io/nahida4479/nevai:latest
 docker run --env-file .env ghcr.io/nahida4479/nevai:latest 
 ```
 
 ## Running without Docker
 
-``` bash
+```bash
 git clone https://github.com/Nahida4479/NevAI-Bot.git
 cd NevAI-Bot
 npm install
