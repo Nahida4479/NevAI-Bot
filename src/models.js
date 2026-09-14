@@ -24,7 +24,7 @@ const openroute = ["openrouter/free"]
 async function callOpenRouter(messages) {
     for (const model of openroute) {
         try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${process.env.OPENROUTER_API}`,
@@ -32,11 +32,41 @@ async function callOpenRouter(messages) {
             },
             body: JSON.stringify({ model, messages, tools}) 
         });
-        const data = await response.json();
+        let data = await response.json();
+        let message = data.choices[0].message;
+
+        if (message.tool_calls) {
+            const toolCall = message.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            const query = args.query || '';
+            if (!query) {
+                return { content: "I tried to search but didn't have a clear query.", model: model };
+            }
+        
+
+        const searchResult = await exa_request(query);
+        const followUpMessage = [
+            ...messages,
+            message,
+            { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+        ]
+
+            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.OPENROUTER_API}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages: followUpMessage, tools})
+            })
+        data = await response.json();
+        message = data.choices[0].message;
+
+        }
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
         return { content: data.choices[0].message.content, model: data.model };
     } catch (err) {
-        const logs_err = `OpenRouter model ${data.model} failed ${err}`
+        const logs_err = `OpenRouter model ${model} failed ${err}`
         debug_log_err(logs_err)
     }
 }
@@ -90,7 +120,7 @@ async function callGroq(messages) {
 async function callGroqVisionModels(messages) {
     for (const model of visionModel) {
         try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden", tools: tools});
+            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
             console.log(styleText(['greenBright', 'bold'], `GROQ_API_VISIONS_MODEL: ${model}`));
             return { content: response.choices[0].message.content, model: model }
         } catch (err) {
@@ -129,7 +159,7 @@ async function callHackClub(messages) {
         for (const model of HackClubModels) {
 
             try {
-        const respond = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+        let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${process.env.HACKCLUB_API}`,
@@ -137,7 +167,37 @@ async function callHackClub(messages) {
             },
             body: JSON.stringify({ model, messages, tools })
         });
-        const data = await respond.json();
+        let data = await response.json();
+        let message = data.choices[0].message;
+
+        if (message.tool_calls) {
+            const toolCall = message.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            const query = args.query || '';
+            if (!query) {
+                return { content: "I tried to search but didn't have a clear query.", model: model };
+            }
+
+
+            const searchResult = await exa_request(query);
+            const followUpMessage = [
+                ...messages,
+                message,
+                { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+            ]
+
+            response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.HACKCLUB_API}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages: followUpMessage, tools })
+            })
+            data = await response.json();
+            message = data.choices[0].message;
+
+        }
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
         return { content: data.choices[0].message.content, model: model};
         } catch (err) {
