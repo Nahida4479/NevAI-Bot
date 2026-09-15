@@ -32,7 +32,7 @@ async function callOpenRouter(messages) {
                 Authorization: `Bearer ${process.env.OPENROUTER_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages, tools}) 
+            body: JSON.stringify({ model, messages, tools }) 
         });
         let data = await response.json();
         let message = data.choices[0].message;
@@ -57,14 +57,15 @@ async function callOpenRouter(messages) {
             message,
             { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
         ]
-
+            
+        const isLastRound = tool_rounds === 2
             response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${process.env.OPENROUTER_API}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages: followUpMessage, tools})
+                body: JSON.stringify({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" })
             })
         data = await response.json();
         message = data.choices[0].message;
@@ -88,7 +89,8 @@ async function callGroq(messages) {
         let searchedImageResult;
         debugging(searchedImageResult);
         try {
-            let response = await groq.chat.completions.create({ messages, model, tools: tools });
+
+            let response = await groq.chat.completions.create({ messages, model, tools });
             let message = response.choices[0].message;
             let tool_rounds = 0
 
@@ -113,7 +115,8 @@ async function callGroq(messages) {
                     { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
                 ]
 
-                    response = await groq.chat.completions.create({ messages: followUpMessage, model, tools});
+                    const isLastRound = tool_rounds === 2
+                response = await groq.chat.completions.create({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" });
                     message = response.choices[0].message;
                     tool_rounds++;
             }
@@ -182,8 +185,8 @@ async function callHackClub(messages) {
                 'Authorization': `Bearer ${process.env.HACKCLUB_API}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages, tools })
-        });
+            body: JSON.stringify({ model, messages, tools})
+        }); 
         let data = await response.json();
         let message = data.choices[0].message;
 
@@ -201,20 +204,21 @@ async function callHackClub(messages) {
             const searchResult = await exa_request(query);
             searchedImageResult = await search_images(query);
             debugging(searchedImageResult);
-            
+
             const followUpMessage = [
                 ...messages,
                 message,
                 { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
             ]
 
+            const isLastRound = tool_rounds === 2
             response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${process.env.HACKCLUB_API}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages: followUpMessage, tools })
+                body: JSON.stringify({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" })
             })
             data = await response.json();
             message = data.choices[0].message;
