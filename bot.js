@@ -13,7 +13,6 @@ import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './d
 import { styleText } from 'node:util';
 import { readFileSync } from 'node:fs';
 
-
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
     debug_log_err(err_message)
@@ -139,8 +138,8 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: messageContent });
 
-    const basePrompt = `You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. `
-    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
+    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first — do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...guildData.history
@@ -160,7 +159,6 @@ client.on('messageCreate', async (message) => {
 
     let response;
     if (message.attachments.size > 0) {
-        response.content = response.content || `${lang.responseErrors}`
         const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
         const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
         const textPart = { type: "text", text: messageContent };
@@ -205,6 +203,11 @@ client.on('messageCreate', async (message) => {
         }
     }
 
+    if (!response.content) {
+        response.content = response.content || `${lang.responseErrors}`
+    } else if (response.content.length > 2000) {
+        response.content = response.content.slice(0, 1990) + "..."
+    }
     debugging(` \n User: ${message.content} \n AI Response: ${response.content} \n Model: ${response.model}`)
     const duration = Date.now() - startTime;
     debugging(`[Guild: ${message.guildId} | Channel: ${message.channelId}] AI response time: ${duration}ms`)

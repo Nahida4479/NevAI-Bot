@@ -3,7 +3,7 @@ import 'dotenv/config';
 import Groq from 'groq-sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
-import { exa_request, tools } from './exa_ai_search_logic.js';
+import { exa_request, tools, formatSearchResult } from './exa_ai_search_logic.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -50,7 +50,7 @@ async function callOpenRouter(messages) {
         const followUpMessage = [
             ...messages,
             message,
-            { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+            { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
         ]
 
             response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -100,7 +100,7 @@ async function callGroq(messages) {
                 const followUpMessage = [
                     ...messages,
                     message,
-                    { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" })}
+                    { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
                 ]
 
                     response = await groq.chat.completions.create({ messages: followUpMessage, model, tools});
@@ -189,7 +189,7 @@ async function callHackClub(messages) {
             const followUpMessage = [
                 ...messages,
                 message,
-                { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(searchResult || { error: "search failed" }) }
+                { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
             ]
 
             response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
