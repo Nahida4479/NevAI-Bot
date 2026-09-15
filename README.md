@@ -28,7 +28,7 @@
 
 <img src="./public/how_are_you_NevAI.png">
 
-3. 
+3. You can customize the bot's options using [administrator commands](#administrator-commands) (server administrator only).
 
 # AI models list (only free models)
 
