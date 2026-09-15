@@ -12,6 +12,8 @@ import { sendLogEmbed } from './src/logs_command.js';
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
 import { readFileSync } from 'node:fs';
+import net from 'node:net';
+net.setDefaultAutoSelectFamily(false);
 
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
@@ -50,10 +52,12 @@ const client = new Client({
 
 process.on('unhandledRejection', (reason) => {
     debug_log_err(reason)
+    debugging(reason)
 });
 
 process.on('uncaughtException', (reason) => {
     debug_log_err(reason)
+    debugging(reason)
 })
 
 client.once('clientReady', async () => {
@@ -138,14 +142,13 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: messageContent });
 
-    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool (you can use this tool up to 3 times in a row.). You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...guildData.history
     ]
 
-    await message.channel.sendTyping();
     try {
         await message.react(guildData.emoji || '🤔')
     } catch (err) {
@@ -230,7 +233,7 @@ client.on('messageCreate', async (message) => {
     const replyOption = { content: response.content };
 
     if (response.imageResult && response.imageResult.length > 0) {
-        replyOption.files = [response.imageResult[0].image_url];
+        replyOption.files = [response.imageResult[0].imageUrl];
     }
     await message.reply(replyOption)
     await message.reactions.removeAll();
