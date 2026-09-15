@@ -1,6 +1,6 @@
 import Exa from "exa-js";
 import 'dotenv/config'
-import { debugging, debug_log_success, debug_log_err } from "../debug/debug.js";
+import { debugging, debug_log_success, debug_log_err } from "./debug/debug.js";
 
 let exa = null;
 if (!process.env.EXA_API) {
@@ -17,9 +17,14 @@ async function call_exa (ai_question) {
         type: 'auto',
         contents: {
             highlights: true,
+            extras: {
+                imageLinks: 3
+            }
         },
     });
     debugging(JSON.stringify(result))
+    debugging(JSON.stringify(result.results[0].extras, null, 2))
+
 } catch (err) {
     const error_exa = `EXA error, ${err}`
     debug_log_err(error_exa)
@@ -75,5 +80,48 @@ function formatSearchResult(rawResult) {
     debugging(`Exa information: ${formatted}`);
     return `Use ONLY the information below to answer. Do not add facts, categories, or details that aren't explicitly stated here, even if you think you know them.\n\n${formatted}`;
 }
+
+function getImageUrl(rawResult) {
+    if (!rawResult || !rawResult.results || rawResult.results.length === 0) return null;
+    return rawResult.results[0].image || null;
+}
+
+async function search_images(ai_question) {
+    let images;
+    try {
+        const response = await fetch('https://api.exa.ai/search', {
+            method: 'POST',
+            headers: {
+                "Content-type": "application/json",
+                "x-api-key": process.env.EXA_API,
+            },
+            body: JSON.stringify({
+                query: `${ai_question} build infographic guide`,
+                type: "auto",
+                numResults: 15,
+                outputSchema: {
+                    type: 'object',
+                    properties: {
+                        images: {
+                            type: 'array',
+                            "x-exa-image-references": true,
+                            description: "Return up to 5 build guide infographics, ranked best-first."
+                        }
+                    },
+                    required: ['images']
+                }
+            })
+        });
+        const data = await response.json();
+        debugging(JSON.stringify(data));
+        images = data.output.content.images;
+    } catch (err) {
+        const error_message = `Exa image search error ${err}`;
+        debug_log_err(error_message)
+        debugging(err)
+    }
+    return images;
+}
+
 
 export { call_exa, exa_request, tools, formatSearchResult }
