@@ -24,5 +24,6 @@
     "languagecommand": "Change the bot's command response language.",
     "logscommand": "Set the channel where AI response logs will be sent.",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "noVisionModels": "All vision models not avaliable"
 }

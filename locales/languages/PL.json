@@ -24,5 +24,7 @@
     "languagecommand": "Zmień język bota",
     "logscommand": "Ustaw kanał gdzie bot będzie wysyłał logi",
     "yes": "Tak",
-    "no": "Nie"
+    "no": "Nie",
+    "noVisionModels": "Żaden z modelów wizyjnych nie jest dostępny lub format pliku nie jest obsługiwany",
+    "responseErrors": "Przepraszam, tym razem nie udało mi się wymyślić odpowiedniej odpowiedzi."
 }

@@ -7,11 +7,11 @@ import { loadLanguage, languageCommand } from './locales/languages.js';
 import { Models } from 'groq-sdk/resources';
 import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
+import { sendLogEmbed } from './src/logs_command.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
 import { readFileSync } from 'node:fs';
-import fs from 'fs';
 
 
 if (!process.env.DISCORD_API) {
@@ -160,6 +160,7 @@ client.on('messageCreate', async (message) => {
 
     let response;
     if (message.attachments.size > 0) {
+        response.content = response.content || `${lang.responseErrors}`
         const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
         const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
         const textPart = { type: "text", text: messageContent };
@@ -176,9 +177,14 @@ client.on('messageCreate', async (message) => {
             const err_vision = `Vision models error: ${err}`
             debug_log_err(err_vision);
             debugging(err)
-            await message.reactions.removeAll();
-            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
-            return;
+                await message.reactions.removeAll();
+                await message.reply({ content: `${getEmoji(client, 'error')} ${lang.noVisionModels}`})
+                await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+                    { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+                    { name: 'Error type', value: 'Vision models failed' },
+                    { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+                ]);
+                return;
         }
     } else {
         try {
@@ -190,6 +196,11 @@ client.on('messageCreate', async (message) => {
             debugging(err)
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
+            await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+                { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+                { name: 'Error type', value: 'AI models failed' },
+                { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+            ]);
             return;
         }
     }
@@ -198,20 +209,11 @@ client.on('messageCreate', async (message) => {
     const duration = Date.now() - startTime;
     debugging(`[Guild: ${message.guildId} | Channel: ${message.channelId}] AI response time: ${duration}ms`)
 
-    if (guildData.logschannel) {
-        const logChannel = client.channels.cache.get(guildData.logschannel)
-
-        const logEmbed = new EmbedBuilder()
-            .setColor(0xFFA500)
-            .addFields(
-                { name: 'User message', value: message.content || `${lang.noMessageContent}`},
-                { name: 'Model', value: response.model},
-                { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}`  },
-            )
-            .setTimestamp();
-
-        await logChannel.send({ embeds: [logEmbed] })
-    }
+    await sendLogEmbed(client, guildData, 'AI Response', 0xFFA500, [
+        { name: 'User message', value: message.content || `${lang.noMessageContent}`},
+        { name: 'Model', value: response.model },
+        { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}` },
+    ]);
 
     guildData.history.push({ role: 'assistant', content: response.content });
 
