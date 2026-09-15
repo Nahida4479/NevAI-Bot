@@ -22,6 +22,14 @@
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
 
+# How to use?
+1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=8&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
+2. Mention the bot, then ask your question.
+
+<img src="./public/how_are_you_NevAI.png">
+
+3. 
+
 # AI models list (only free models)
 
 **Gemini**
@@ -60,7 +68,7 @@ qwen/qwen3.8-27b
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web.
 
-# Commands
+# Administrator commands
 
 | **Commands** | **Description** |
 |---|---|

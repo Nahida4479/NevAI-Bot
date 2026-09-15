@@ -138,7 +138,7 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: messageContent });
 
-    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool (you can use this tool up to 3 times in a row.). You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first — do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use Markdown supported by Discord (*,**, ***, #, ##, ###, \`,\`\`\`,__,|). Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool (you can use this tool up to 3 times in a row.). You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
@@ -232,7 +232,7 @@ client.on('messageCreate', async (message) => {
     if (response.imageResult && response.imageResult.length > 0) {
         replyOption.files = [response.imageResult[0].image_url];
     }
-    await message.reply(response.content)
+    await message.reply(replyOption)
     await message.reactions.removeAll();
     
 })
