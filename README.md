@@ -56,6 +56,10 @@ qwen/qwen3.6-27b
 qwen/qwen3.8-27b
 ```
 
+## Models web search ([Exa.ai](https://exa.ai/))
+
+The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web.
+
 # Commands
 
 | **Commands** | **Description** |
@@ -80,7 +84,9 @@ qwen/qwen3.8-27b
  [OpenRouter](https://openrouter.ai)
 
 
-You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__.
+You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
+
+
 
 ## Env
 
