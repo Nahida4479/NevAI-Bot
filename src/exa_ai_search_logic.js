@@ -78,12 +78,7 @@ function formatSearchResult(rawResult) {
     ).join('\n\n');
 
     debugging(`Exa information: ${formatted}`);
-    return `Use ONLY the information below to answer. Do not add facts, categories, or details that aren't explicitly stated here, even if you think you know them.\n\n${formatted}`;
-}
-
-function getImageUrl(rawResult) {
-    if (!rawResult || !rawResult.results || rawResult.results.length === 0) return null;
-    return rawResult.results[0].image || null;
+    return `Use ONLY the information below to answer. Do not invent character names, team compositions, item names, or any other specific detail not explicitly present here. If the provided information doesn't mention something (e.g. team members), say you don't have that specific detail rather than guessing.\n\n${formatted}`;
 }
 
 async function search_images(ai_question) {
@@ -96,7 +91,7 @@ async function search_images(ai_question) {
                 "x-api-key": process.env.EXA_API,
             },
             body: JSON.stringify({
-                query: `${ai_question} build infographic guide`,
+                query: `${ai_question} character build stats infographic screenshot`,
                 type: "auto",
                 numResults: 15,
                 outputSchema: {
@@ -114,6 +109,7 @@ async function search_images(ai_question) {
         });
         const data = await response.json();
         debugging(JSON.stringify(data));
+        debugging(JSON.stringify(response));
         images = data.output.content.images;
     } catch (err) {
         const error_message = `Exa image search error ${err}`;

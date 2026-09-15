@@ -38,7 +38,7 @@ async function callOpenRouter(messages) {
         let message = data.choices[0].message;
 
         let tool_rounds = 0;
-        while (message.tool_calls && tool_rounds < 3) {
+        while (message.tool_calls && tool_rounds < 1) {
             usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
@@ -94,7 +94,7 @@ async function callGroq(messages) {
             let message = response.choices[0].message;
             let tool_rounds = 0
 
-            while (message.tool_calls && tool_rounds < 3) {
+            while (message.tool_calls && tool_rounds < 1) {
                 const toolCall = message.tool_calls[0];
                 const args = JSON.parse(toolCall.function.arguments);
                 const query = args.query || '';
@@ -116,7 +116,21 @@ async function callGroq(messages) {
                 ]
 
                     const isLastRound = tool_rounds === 2
+                    try {
                 response = await groq.chat.completions.create({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" });
+                      } catch (toolErr) {
+                        if (isLastRound && toolErr.message && toolErr.message.includes('tool_use_failed')) {
+                            const warn_err = 'Groq ignored tool_choice: none, retrying without tools'
+                            debug_log_warn(warn_err)
+                            response = await groq.chat.completions.create({
+                                messages: [...followUpMessage, { role: 'system', content: "Respond in plain text only.Do not call any function or tool." }],
+                                model
+                            });
+                        } else {
+                            debugging(toolErr)
+                            throw toolErr
+                        }
+                      }  
                     message = response.choices[0].message;
                     tool_rounds++;
             }
@@ -191,7 +205,7 @@ async function callHackClub(messages) {
         let message = data.choices[0].message;
 
         let tool_rounds = 0;
-        while (message.tool_calls && tool_rounds < 3) {
+        while (message.tool_calls && tool_rounds < 1) {
             usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
