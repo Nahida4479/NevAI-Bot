@@ -36,7 +36,8 @@ async function callOpenRouter(messages) {
         let data = await response.json();
         let message = data.choices[0].message;
 
-        if (message.tool_calls) {
+        let tool_rounds = 0;
+        while (message.tool_calls && tool_rounds < 3) {
             usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
@@ -63,6 +64,7 @@ async function callOpenRouter(messages) {
             })
         data = await response.json();
         message = data.choices[0].message;
+        tool_rounds++;
 
         }
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
@@ -84,7 +86,8 @@ async function callGroq(messages) {
 
             let message = response.choices[0].message;
 
-            if (message.tool_calls) {
+            let tool_rounds = 0
+            while (message.tool_calls && tool_rounds < 3) {
                 const toolCall = message.tool_calls[0];
                 const args = JSON.parse(toolCall.function.arguments);
                 const query = args.query || '';
@@ -105,6 +108,7 @@ async function callGroq(messages) {
 
                     response = await groq.chat.completions.create({ messages: followUpMessage, model, tools});
                     message = response.choices[0].message;
+                    tool_rounds++;
             }
 
             const tool_response = `Tool calls:', ${JSON.stringify(response.choices[0].message.tool_calls, null, 2)}`
@@ -175,7 +179,8 @@ async function callHackClub(messages) {
         let data = await response.json();
         let message = data.choices[0].message;
 
-        if (message.tool_calls) {
+        let tool_rounds = 0;
+        while (message.tool_calls && tool_rounds < 3) {
             usedInternetSearch = true;
             const toolCall = message.tool_calls[0];
             const args = JSON.parse(toolCall.function.arguments);
@@ -202,7 +207,7 @@ async function callHackClub(messages) {
             })
             data = await response.json();
             message = data.choices[0].message;
-
+            tool_rounds++;
         }
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
         return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch};
