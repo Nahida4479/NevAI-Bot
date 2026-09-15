@@ -17,13 +17,20 @@ async function call_exa (ai_question) {
         type: 'auto',
         contents: {
             highlights: true,
+            extras: {
+                imageLinks: 3
+            }
         },
     });
     debugging(JSON.stringify(result))
+    debugging(JSON.stringify(result.results[0].extras, null, 2))
+
 } catch (err) {
     const error_exa = `EXA error, ${err}`
     debug_log_err(error_exa)
     debugging(err)
+    debugging(`Cause: ${err.cause}`);
+
 } 
 debugging(result)
 return result;
@@ -32,8 +39,13 @@ return result;
 async function exa_request(ai_question) {
     const exa_final_data = await call_exa(ai_question);
     debugging(JSON.stringify(exa_final_data))
+    if (exa_final_data) {
     const exa_success = 'EXA success'
     debug_log_success(exa_success);
+    } else {
+        const exa_error = 'EXA error'
+        debug_log_err(exa_error)
+    }
     return exa_final_data;
 }
 
@@ -58,4 +70,58 @@ const tools = process.env.EXA_API ? [
 ] : undefined;
 
 
-export { call_exa, exa_request, tools }
+function formatSearchResult(rawResult) {
+    if (!rawResult || !rawResult.results) return "No results found.";
+    debugging(rawResult)
+    const formatted = rawResult.results.slice(0, 3).map(r =>
+        `Title: ${r.title}\nURL: ${r.url}\nSummary: ${r.highlights?.[0]?.slice(0, 300) || 'N/A'}`
+    ).join('\n\n');
+
+    debugging(`Exa information: ${formatted}`);
+    return `Use ONLY the information below to answer. Do not add facts, categories, or details that aren't explicitly stated here, even if you think you know them.\n\n${formatted}`;
+}
+
+function getImageUrl(rawResult) {
+    if (!rawResult || !rawResult.results || rawResult.results.length === 0) return null;
+    return rawResult.results[0].image || null;
+}
+
+async function search_images(ai_question) {
+    let images;
+    try {
+        const response = await fetch('https://api.exa.ai/search', {
+            method: 'POST',
+            headers: {
+                "Content-type": "application/json",
+                "x-api-key": process.env.EXA_API,
+            },
+            body: JSON.stringify({
+                query: `${ai_question} build infographic guide`,
+                type: "auto",
+                numResults: 15,
+                outputSchema: {
+                    type: 'object',
+                    properties: {
+                        images: {
+                            type: 'array',
+                            "x-exa-image-references": true,
+                            description: "Return up to 5 build guide infographics, ranked best-first."
+                        }
+                    },
+                    required: ['images']
+                }
+            })
+        });
+        const data = await response.json();
+        debugging(JSON.stringify(data));
+        images = data.output.content.images;
+    } catch (err) {
+        const error_message = `Exa image search error ${err}`;
+        debug_log_err(error_message)
+        debugging(err)
+    }
+    return images;
+}
+
+
+export { call_exa, exa_request, tools, formatSearchResult, search_images }

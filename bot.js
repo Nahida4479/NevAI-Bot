@@ -7,12 +7,11 @@ import { loadLanguage, languageCommand } from './locales/languages.js';
 import { Models } from 'groq-sdk/resources';
 import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
+import { sendLogEmbed } from './src/logs_command.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
 import { readFileSync } from 'node:fs';
-import fs from 'fs';
-
 
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
@@ -139,8 +138,8 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: messageContent });
 
-    const basePrompt = `You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. `
-    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || 'You are a assistand named NevAI. Use markdown and keep your answer brief and under 1500 characters. ';
+    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool (you can use this tool up to 3 times in a row.). You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...guildData.history
@@ -176,9 +175,14 @@ client.on('messageCreate', async (message) => {
             const err_vision = `Vision models error: ${err}`
             debug_log_err(err_vision);
             debugging(err)
-            await message.reactions.removeAll();
-            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.unsuportedImage}`});
-            return;
+                await message.reactions.removeAll();
+                await message.reply({ content: `${getEmoji(client, 'error')} ${lang.noVisionModels}`})
+                await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+                    { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+                    { name: 'Error type', value: 'Vision models failed' },
+                    { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+                ]);
+                return;
         }
     } else {
         try {
@@ -190,28 +194,29 @@ client.on('messageCreate', async (message) => {
             debugging(err)
             await message.reactions.removeAll();
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
+            await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+                { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+                { name: 'Error type', value: 'AI models failed' },
+                { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+            ]);
             return;
         }
     }
 
+    if (!response.content) {
+        response.content = response.content || `${lang.responseErrors}`
+    } else if (response.content.length > 2000) {
+        response.content = response.content.slice(0, 1990) + "..."
+    }
     debugging(` \n User: ${message.content} \n AI Response: ${response.content} \n Model: ${response.model}`)
     const duration = Date.now() - startTime;
     debugging(`[Guild: ${message.guildId} | Channel: ${message.channelId}] AI response time: ${duration}ms`)
 
-    if (guildData.logschannel) {
-        const logChannel = client.channels.cache.get(guildData.logschannel)
-
-        const logEmbed = new EmbedBuilder()
-            .setColor(0xFFA500)
-            .addFields(
-                { name: 'User message', value: message.content || `${lang.noMessageContent}`},
-                { name: 'Model', value: response.model},
-                { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}`  },
-            )
-            .setTimestamp();
-
-        await logChannel.send({ embeds: [logEmbed] })
-    }
+    await sendLogEmbed(client, guildData, 'AI Response', 0xFFA500, [
+        { name: 'User message', value: message.content || `${lang.noMessageContent}`},
+        { name: 'Model', value: response.model },
+        { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}` },
+    ]);
 
     guildData.history.push({ role: 'assistant', content: response.content });
 
@@ -222,7 +227,12 @@ client.on('messageCreate', async (message) => {
     data[message.guildId] = guildData;
     saveData(data);
 
-    await message.reply(response.content)
+    const replyOption = { content: response.content };
+
+    if (response.imageResult && response.imageResult.length > 0) {
+        replyOption.files = [response.imageResult[0].image_url];
+    }
+    await message.reply(replyOption)
     await message.reactions.removeAll();
     
 })

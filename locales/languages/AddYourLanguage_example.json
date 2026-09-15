@@ -18,5 +18,12 @@
     "aiResponseError": "",
     "logsChannelRemoved": "",
     "setLogsChannel": "",
-    "noMessageContent": "No content"
+    "noMessageContent": "",
+    "aicommands": "",
+    "aisettingscommand": "",
+    "languagecommand": "",
+    "logscommand": "",
+    "yes": "",
+    "no": "",
+    "noVisionModels": ""
 }
