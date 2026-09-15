@@ -227,6 +227,11 @@ client.on('messageCreate', async (message) => {
     data[message.guildId] = guildData;
     saveData(data);
 
+    const replyOption = { content: response.content };
+
+    if (response.imageResult && response.imageResult.length > 0) {
+        replyOption.files = [response.imageResult[0].image_url];
+    }
     await message.reply(response.content)
     await message.reactions.removeAll();
     

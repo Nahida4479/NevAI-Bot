@@ -1,6 +1,6 @@
 import Exa from "exa-js";
 import 'dotenv/config'
-import { debugging, debug_log_success, debug_log_err } from "./debug/debug.js";
+import { debugging, debug_log_success, debug_log_err } from "../debug/debug.js";
 
 let exa = null;
 if (!process.env.EXA_API) {
@@ -124,4 +124,4 @@ async function search_images(ai_question) {
 }
 
 
-export { call_exa, exa_request, tools, formatSearchResult }
+export { call_exa, exa_request, tools, formatSearchResult, search_images }

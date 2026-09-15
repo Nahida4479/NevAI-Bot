@@ -3,7 +3,7 @@ import 'dotenv/config';
 import Groq from 'groq-sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
-import { exa_request, tools, formatSearchResult } from './exa_ai_search_logic.js';
+import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -23,6 +23,7 @@ const openroute = ["openrouter/free"]
 
 async function callOpenRouter(messages) {
     for (const model of openroute) {
+        let searchedImageResult;
         let usedInternetSearch = false;
         try {
         let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -48,6 +49,9 @@ async function callOpenRouter(messages) {
         
 
         const searchResult = await exa_request(query);
+        searchedImageResult = await search_images(query);
+        debugging(searchedImageResult);
+
         const followUpMessage = [
             ...messages,
             message,
@@ -68,7 +72,7 @@ async function callOpenRouter(messages) {
 
         }
         console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
-        return { content: data.choices[0].message.content, model: data.model, usedInternetSearch: usedInternetSearch };
+        return { content: data.choices[0].message.content, model: data.model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult };
     } catch (err) {
         const logs_err = `OpenRouter model ${model} failed ${err}`
         debug_log_err(logs_err)
@@ -81,12 +85,13 @@ async function callOpenRouter(messages) {
 async function callGroq(messages) {
     for (const model of groqModels) {
         let usedInternetSearch = false;
+        let searchedImageResult;
+        debugging(searchedImageResult);
         try {
             let response = await groq.chat.completions.create({ messages, model, tools: tools });
-
             let message = response.choices[0].message;
-
             let tool_rounds = 0
+
             while (message.tool_calls && tool_rounds < 3) {
                 const toolCall = message.tool_calls[0];
                 const args = JSON.parse(toolCall.function.arguments);
@@ -99,6 +104,8 @@ async function callGroq(messages) {
                 }
 
                 const searchResult = await exa_request(query);
+                searchedImageResult = await search_images(query);
+                debugging(searchedImageResult);
 
                 const followUpMessage = [
                     ...messages,
@@ -116,7 +123,7 @@ async function callGroq(messages) {
 
             const model_groq_api = `GROQ_API: ${model}`
             console.log(styleText(['greenBright', 'bold'], model_groq_api));
-            return { content: response.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch };
+            return { content: response.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult };
         } catch(err) {
             const logs_groq_message = `Groq model ${model} failed, ${err}`;
             debug_log_err(logs_groq_message)
@@ -165,7 +172,8 @@ async function callGemini(messages) {
 
 async function callHackClub(messages) {
         for (const model of HackClubModels) {
-
+        let searchedImageResult;
+        debugging(searchedImageResult);
         let usedInternetSearch = false;
             try {
         let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
@@ -191,6 +199,9 @@ async function callHackClub(messages) {
 
 
             const searchResult = await exa_request(query);
+            searchedImageResult = await search_images(query);
+            debugging(searchedImageResult);
+            
             const followUpMessage = [
                 ...messages,
                 message,
@@ -210,7 +221,7 @@ async function callHackClub(messages) {
             tool_rounds++;
         }
         console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
-        return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch};
+        return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult};
         } catch (err) {
             const logs_hackclub = `HackClub model ${model} failed ${err}`
             debug_log_err(logs_hackclub)
