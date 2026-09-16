@@ -17,7 +17,7 @@ if (process.env.GROQ_API) {
 //Free AI Models
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['meta-llama/llama-3.3-70b-instruct']
+const HackClubModels = ['qwen/qwen3-32b']
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
 
@@ -252,17 +252,17 @@ async function callHackClub(messages) {
 
 async function getAiResponse(messages) {
     try {
-        return await callGroq(messages);
-    } catch (err) {
-        const failed_q = `GROQ_API: Failed`
-        debug_log_err(failed_q)
-    }
-
-    try {
         return await callHackClub(messages);
     } catch (err) {
         const failed_hc = `HACKCLUB_API: Failed`
         debug_log_err(failed_hc)
+    }
+
+    try {
+        return await callGroq(messages);
+    } catch (err) {
+        const failed_q = `GROQ_API: Failed`
+        debug_log_err(failed_q)
     }
 
     try {

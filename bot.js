@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder } from 'discord.js';
 import { getAiResponse, getVisionAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
@@ -233,6 +233,7 @@ client.on('messageCreate', async (message) => {
     const replyOption = { content: response.content };
 
     if (response.imageResult && response.imageResult.length > 0) {
+        const attachment = new AttachmentBuilder(response.imageResult[0].imageUrl, { name: 'image.webp' });
         replyOption.files = [response.imageResult[0].imageUrl];
     }
     await message.reply(replyOption)
