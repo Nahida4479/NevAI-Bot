@@ -46,7 +46,7 @@ openai/gpt-oss-20b
 
 **HackClub**
 ```yaml
-meta-llama/llama-3.3-70b-instruct
+qwen/qwen3-32b
 ```
 
 **Openrouter**
