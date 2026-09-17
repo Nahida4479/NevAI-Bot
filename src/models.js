@@ -25,6 +25,7 @@ async function callOpenRouter(messages) {
     for (const model of openroute) {
         let searchedImageResult;
         let usedInternetSearch = false;
+        let searchResult;
         try {
         let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -48,12 +49,13 @@ async function callOpenRouter(messages) {
             }
         
 
-        const [searchResult, searchedImageResult] = await Promise.all([
+        [searchResult, searchedImageResult] = await Promise.all([
             exa_request(query),
             search_images(query),
         ])
-            debugging(searchedImageResult),
+            debugging(searchedImageResult)
             debugging(searchResult)
+            debugging(search_images)
 
         const followUpMessage = [
             ...messages,
@@ -90,6 +92,7 @@ async function callGroq(messages) {
     for (const model of groqModels) {
         let usedInternetSearch = false;
         let searchedImageResult;
+        let searchResult;
         debugging(searchedImageResult);
         try {
 
@@ -108,12 +111,14 @@ async function callGroq(messages) {
                     return { content: "I tried to search but didn't have a clear query.", model: model }; 
                 }
 
-                const [searchResult, searchedImageResult] = await Promise.all([
+                [searchResult, searchedImageResult] = await Promise.all([
                     exa_request(query),
                     search_images(query),
                 ])
                     debugging(searchedImageResult),
                     debugging(searchResult)
+                    debugging(search_images)
+
 
                 const followUpMessage = [
                     ...messages,
@@ -198,6 +203,7 @@ async function callHackClub(messages) {
         let searchedImageResult;
         debugging(searchedImageResult);
         let usedInternetSearch = false;
+        let searchResult;
             try {
         let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
             method: "POST",
@@ -221,12 +227,14 @@ async function callHackClub(messages) {
             }
 
 
-            const [searchResult, searchedImageResult] = await Promise.all([
+            [searchResult, searchedImageResult] = await Promise.all([
                 exa_request(query),
                 search_images(query),
             ])
                 debugging(searchedImageResult),
                 debugging(searchResult)
+                debugging(search_images)
+
 
             const followUpMessage = [
                 ...messages,

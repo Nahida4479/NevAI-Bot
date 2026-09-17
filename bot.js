@@ -142,7 +142,7 @@ client.on('messageCreate', async (message) => {
 
     guildData.history.push({ role: 'user', content: messageContent });
 
-    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. For every specific fact (item name, character name, stat), you MUST indicate which search result it came from (e.g. "according to Result 1..."). CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail isn't explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const basePrompt = `You are an assistant named ${client.user.username}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. For every specific fact (item name, character name, stat), you MUST indicate which search result it came from (e.g. "according to Result 1..."). CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail isn't explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
@@ -230,12 +230,15 @@ client.on('messageCreate', async (message) => {
     data[message.guildId] = guildData;
     saveData(data);
 
-    const replyOption = { content: response.content };
+    const replyOption = { content: response.content, flags: MessageFlags.SuppressEmbeds };
 
     if (response.imageResult && response.imageResult.length > 0) {
         try {
-        const attachment = new AttachmentBuilder(response.imageResult[0].imageUrl, { name: 'image.webp' });
-        replyOption.files = [response.imageResult[0].imageUrl];
+        const imgResponse = await fetch(response.imageResult[0].imageUrl);
+        const imgBuffer = Buffer.from(await imgResponse.arrayBuffer());
+        const attachment = new AttachmentBuilder(imgBuffer, { name: 'image.webp' });
+        replyOption.files = [attachment];
+        debugging(`Exa image: ${attachment}, ${imgResponse}, ${imgBuffer}`)
         } catch (err) {
             debugging(`Image attach failed: ${err}`);
         }

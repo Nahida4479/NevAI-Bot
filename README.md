@@ -46,7 +46,7 @@ openai/gpt-oss-20b
 
 **HackClub**
 ```yaml
-qwen/qwen3-32b
+google/gemini-3-flash-preview
 ```
 
 **Openrouter**
