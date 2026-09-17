@@ -17,7 +17,7 @@ if (process.env.GROQ_API) {
 //Free AI Models
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['qwen/qwen3-32b']
+const HackClubModels = ['google/gemini-3-flash-preview']
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
 
@@ -48,9 +48,12 @@ async function callOpenRouter(messages) {
             }
         
 
-        const searchResult = await exa_request(query);
-        searchedImageResult = await search_images(query);
-        debugging(searchedImageResult);
+        const [searchResult, searchedImageResult] = await Promise.all([
+            exa_request(query),
+            search_images(query),
+        ])
+            debugging(searchedImageResult),
+            debugging(searchResult)
 
         const followUpMessage = [
             ...messages,
@@ -105,9 +108,12 @@ async function callGroq(messages) {
                     return { content: "I tried to search but didn't have a clear query.", model: model }; 
                 }
 
-                const searchResult = await exa_request(query);
-                searchedImageResult = await search_images(query);
-                debugging(searchedImageResult);
+                const [searchResult, searchedImageResult] = await Promise.all([
+                    exa_request(query),
+                    search_images(query),
+                ])
+                    debugging(searchedImageResult),
+                    debugging(searchResult)
 
                 const followUpMessage = [
                     ...messages,
@@ -215,9 +221,12 @@ async function callHackClub(messages) {
             }
 
 
-            const searchResult = await exa_request(query);
-            searchedImageResult = await search_images(query);
-            debugging(searchedImageResult);
+            const [searchResult, searchedImageResult] = await Promise.all([
+                exa_request(query),
+                search_images(query),
+            ])
+                debugging(searchedImageResult),
+                debugging(searchResult)
 
             const followUpMessage = [
                 ...messages,
