@@ -321,6 +321,7 @@ if (interaction.commandName === 'language') {
     }
     data[interaction.guildId].language = lang;
     saveData(data);
+    debugging(data)
     await interaction.reply({ content: `${getEmoji(client, 'success')} Language set to ${lang}`, flags: MessageFlags.Ephemeral });
 }
 
