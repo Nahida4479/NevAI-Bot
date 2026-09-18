@@ -25,5 +25,6 @@
     "logscommand": "Set the channel where AI response logs will be sent.",
     "yes": "Yes",
     "no": "No",
-    "noVisionModels": "All vision models not avaliable"
+    "noVisionModels": "All vision models not avaliable",
+    "responseErrors": "Sorry, I couldn't come up with a proper answer that time."
 }

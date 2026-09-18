@@ -17,7 +17,7 @@ if (process.env.GROQ_API) {
 //Free AI Models
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['meta-llama/llama-3.3-70b-instruct']
+const HackClubModels = ['google/gemini-3-flash-preview']
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
 
@@ -25,6 +25,7 @@ async function callOpenRouter(messages) {
     for (const model of openroute) {
         let searchedImageResult;
         let usedInternetSearch = false;
+        let searchResult;
         try {
         let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -48,9 +49,13 @@ async function callOpenRouter(messages) {
             }
         
 
-        const searchResult = await exa_request(query);
-        searchedImageResult = await search_images(query);
-        debugging(searchedImageResult);
+        [searchResult, searchedImageResult] = await Promise.all([
+            exa_request(query),
+            search_images(query),
+        ])
+            debugging(searchedImageResult)
+            debugging(searchResult)
+            debugging(search_images)
 
         const followUpMessage = [
             ...messages,
@@ -87,6 +92,7 @@ async function callGroq(messages) {
     for (const model of groqModels) {
         let usedInternetSearch = false;
         let searchedImageResult;
+        let searchResult;
         debugging(searchedImageResult);
         try {
 
@@ -105,9 +111,14 @@ async function callGroq(messages) {
                     return { content: "I tried to search but didn't have a clear query.", model: model }; 
                 }
 
-                const searchResult = await exa_request(query);
-                searchedImageResult = await search_images(query);
-                debugging(searchedImageResult);
+                [searchResult, searchedImageResult] = await Promise.all([
+                    exa_request(query),
+                    search_images(query),
+                ])
+                    debugging(searchedImageResult),
+                    debugging(searchResult)
+                    debugging(search_images)
+
 
                 const followUpMessage = [
                     ...messages,
@@ -192,6 +203,7 @@ async function callHackClub(messages) {
         let searchedImageResult;
         debugging(searchedImageResult);
         let usedInternetSearch = false;
+        let searchResult;
             try {
         let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
             method: "POST",
@@ -215,9 +227,14 @@ async function callHackClub(messages) {
             }
 
 
-            const searchResult = await exa_request(query);
-            searchedImageResult = await search_images(query);
-            debugging(searchedImageResult);
+            [searchResult, searchedImageResult] = await Promise.all([
+                exa_request(query),
+                search_images(query),
+            ])
+                debugging(searchedImageResult),
+                debugging(searchResult)
+                debugging(search_images)
+
 
             const followUpMessage = [
                 ...messages,
@@ -252,17 +269,17 @@ async function callHackClub(messages) {
 
 async function getAiResponse(messages) {
     try {
-        return await callGroq(messages);
-    } catch (err) {
-        const failed_q = `GROQ_API: Failed`
-        debug_log_err(failed_q)
-    }
-
-    try {
         return await callHackClub(messages);
     } catch (err) {
         const failed_hc = `HACKCLUB_API: Failed`
         debug_log_err(failed_hc)
+    }
+
+    try {
+        return await callGroq(messages);
+    } catch (err) {
+        const failed_q = `GROQ_API: Failed`
+        debug_log_err(failed_q)
     }
 
     try {

@@ -1,10 +1,10 @@
 # NevAI
 
 <a href="https://discord.com/invite/CttU24eg3F">
-    <img src="./public/nevai-discord-banner.png" style="width: 100%;">
+    <img src="./public/nevai-discord-banner.png" style="width: 100%; href='https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=8&integration_type=0&scope=bot'">
 </a>
 
-**A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models, remembering the last 15 messages for context.**
+**A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.**
 
 # Features
 
@@ -46,7 +46,7 @@ openai/gpt-oss-20b
 
 **HackClub**
 ```yaml
-meta-llama/llama-3.3-70b-instruct
+google/gemini-3-flash-preview
 ```
 
 **Openrouter**
@@ -66,7 +66,7 @@ qwen/qwen3.8-27b
 
 ## Models web search ([Exa.ai](https://exa.ai/))
 
-The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web.
+The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
 # Administrator commands
 
@@ -107,6 +107,10 @@ EXA_API=
 DISCORD_API=
 DEBUG_MODE= #true/false
 ```
+
+> **Note:**
+> `DEBUG_MODE` adds an advanced logging option to the `debug.log` file.
+
 
 # Running
 

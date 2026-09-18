@@ -73,13 +73,13 @@ const tools = process.env.EXA_API ? [
 function formatSearchResult(rawResult) {
     if (!rawResult || !rawResult.results) return "No results found.";
     debugging(rawResult)
-    const formatted = rawResult.results.slice(0, 3).map(r =>
-        `Title: ${r.title}\nURL: ${r.url}\nSummary: ${r.highlights?.[0]?.slice(0, 300) || 'N/A'}`
+    const formatted = rawResult.results.slice(0, 5).map(r =>
+        `Title: ${r.title}\nURL: ${r.url}\nSummary: ${r.highlights?.[0]?.slice(0, 800) || 'N/A'}`
     ).join('\n\n');
 
     debugging(`Exa information: ${formatted}`);
     return `Use ONLY the information below to answer. Do not invent character names, team compositions, item names, or any other specific detail not explicitly present here. If the provided information doesn't mention something (e.g. team members), say you don't have that specific detail rather than guessing.\n\n${formatted}`;
-}
+}   
 
 async function search_images(ai_question) {
     let images;
