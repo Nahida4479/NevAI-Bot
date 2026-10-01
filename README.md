@@ -117,9 +117,11 @@ DEBUG_MODE= #true/false
 ## Docker
 1. Create `.env` file
 
-```dockerfile
+```bash
 docker pull ghcr.io/nahida4479/nevai:latest
-docker run --env-file .env ghcr.io/nahida4479/nevai:latest 
+touch .env
+touch data.json
+docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --name nevai --restart unless-stopped ghcr.io/nahida4479/nevai:latest
 ```
 
 ## Running without Docker

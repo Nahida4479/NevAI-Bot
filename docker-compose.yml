@@ -1,0 +1,17 @@
+services:
+  nevai:
+    image: ghcr.io/nahida4479/nevai:latest
+    container_name: nevai
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data.json:/NevAI/data.json
+
+
+  watchtower:
+    image: nickfedor/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup nevai
