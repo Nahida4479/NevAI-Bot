@@ -1,7 +1,7 @@
 # NevAI
 
 <a href="https://discord.com/invite/CttU24eg3F">
-    <img src="./public/nevai-discord-banner.png" style="width: 100%; href='https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=8&integration_type=0&scope=bot'">
+    <img src="./public/nevai-discord-banner.png" style="width: 100%;">
 </a>
 
 **A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.**
@@ -23,7 +23,7 @@
 - Responds using `Exa.ai`.
 
 # How to use?
-1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=8&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
+1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
 2. Mention the bot, then ask your question.
 
 <img src="./public/how_are_you_NevAI.png">
