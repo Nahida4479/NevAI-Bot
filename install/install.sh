@@ -34,7 +34,7 @@ curl -fsSL -o docker-compose.yml "$REPO_RAW/docker-compose.yml"
 
 touch data.json
 
-curl -fsSL -o setup_env.sh "$REPO_RAW/setup_env.sh"
+curl -fsSL -o setup_env.sh "$REPO_RAW/install/setup_env.sh"
 if [ ! -f .env ]; then
     bash setup_env.sh
 fi

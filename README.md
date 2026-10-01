@@ -117,7 +117,7 @@ DEBUG_MODE= #true/false
 ## Docker with install.sh
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/install/install.sh | bash
 ```
 
 ## Docker manual (no automatic updates)
@@ -125,7 +125,7 @@ curl -sSL https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/install.sh
 ```bash
 mkdir NevAI
 cd NevAI
-curl -fsSL -o .env https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/env.example 
+curl -fsSL -o .env https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/example/env.example 
 nano .env
 chmod 600 .env
 touch data.json
