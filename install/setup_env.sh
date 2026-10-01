@@ -12,7 +12,7 @@ ask() {
     while true; do
         read -r -s -p "$name: " value < /dev/tty
         echo
-        if [ -n "$value" ] || [ "required" != "yes" ]; then
+        if [ -n "$value" ] || [ "$required" != "yes" ]; then
             break
         fi
         echo "This value is required."
