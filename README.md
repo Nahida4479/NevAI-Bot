@@ -114,24 +114,22 @@ DEBUG_MODE= #true/false
 
 # Running
 
-## Docker
-1. Create `.env` file
+## Docker with install.sh
 
 ```bash
-docker pull ghcr.io/nahida4479/nevai:latest
-touch .env
-touch data.json
-docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --name nevai --restart unless-stopped ghcr.io/nahida4479/nevai:latest
+curl -sSL https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/install.sh | bash
 ```
 
-## Running without Docker
+## Docker manual (no automatic updates)
 
 ```bash
-git clone https://github.com/Nahida4479/NevAI-Bot.git
-cd NevAI-Bot
-npm install
-nano .env 
-node bot.js
+mkdir NevAI
+cd NevAI
+curl -fsSL -o .env https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/env.example 
+nano .env
+chmod 600 .env
+touch data.json
+docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --name nevai --restart unless-stopped ghcr.io/nahida4479/nevai:latest
 ```
 
 # License 
