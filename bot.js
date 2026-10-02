@@ -227,7 +227,7 @@ client.on('messageCreate', async (message) => {
 
     const latest = loadData();
     const latestGuild = latest[message.guildId];
-    if (latestGuild?.channel?.includes(message.channelId)) {
+    if (latestGuild?.channels?.includes(message.channelId)) {
         latestGuild.histories[message.channelId] = history.slice(-15);
         saveData(latest)
     }
