@@ -72,7 +72,8 @@ Free models (openrouter/free)
 qwen/qwen3.6-27b 
 qwen/qwen3.8-27b
 ```
-
+> [!WARNING]
+> The model list may change at any time. Free models can be renamed, limited or removed by their providers.
 ## Models web search ([Exa.ai](https://exa.ai/))
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
@@ -90,13 +91,14 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
 
 
 # Requirements
+
 #### Minimum 1 of the listed AI APIs:
 
  [Groq API](https://console.groq.com/keys) **|**
  [Gemini API](https://aistudio.google.com/api-keys) **|**
  [HackClub API](https://ai.hackclub.com/keys) **|**
  [OpenRouter](https://openrouter.ai)
- 
+
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
 
 
@@ -113,7 +115,7 @@ DISCORD_API=
 DEBUG_MODE= #true/false
 ```
 
-> **Note:**
+> [!NOTE]
 > `DEBUG_MODE` adds an advanced logging option to the `debug.log` file.
 
 
@@ -138,4 +140,5 @@ docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --name nevai 
 ```
 
 # License 
-[**MIT LICENSE**](./LICENSE)
+Released under the [MIT License](./LICENSE) © 2026 [Nahida4479](https://github.com/Nahida4479).
+Free to use, modify and share, as long as the license notice is kept. Provided "as is", without warranty.
