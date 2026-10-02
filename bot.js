@@ -140,6 +140,13 @@ client.on('messageCreate', async (message) => {
         messageContent = `${messageContent}\n\nAttached file content: \n${txtContent}`;
     }
 
+    if (message.reference?.messageId) {
+        const replied = await message.fetchReference().catch(() => null);
+        if (replied?.cleanContent) {
+            messageContent = `[Replying to: "${replied.cleanContent.slice(0, 1500)}"]\n${messageContent}`;
+        }
+    }
+
     const discord_people_username = `${message.author.username}, Server username: ${message.member.displayName}, Message send time: ${message.createdAt}, (${message.member.roles.highest.name})`
     history.push({ role: 'user', content: `${discord_people_username}: ${messageContent}` });
 
