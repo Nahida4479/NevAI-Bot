@@ -90,17 +90,13 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
 
 
 # Requirements
-
-### API
-**Minimum 1 of the listed AI APIs:**
-
+#### Minimum 1 of the listed AI APIs:
 
  [Groq API](https://console.groq.com/keys) **|**
  [Gemini API](https://aistudio.google.com/api-keys) **|**
  [HackClub API](https://ai.hackclub.com/keys) **|**
  [OpenRouter](https://openrouter.ai)
-
-
+ 
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
 
 
