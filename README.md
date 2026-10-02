@@ -4,7 +4,7 @@
 </a>
 
 
-<p style="text-align: center; font-weight: bold;">A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.</p>
+<p align="center" style="text-align: center; font-weight: bold;">A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.</p>
 
 <div align="center">
 <img src="https://img.shields.io/badge/NevAI-Your_AI_Bot-blue">
