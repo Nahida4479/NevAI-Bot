@@ -1,10 +1,19 @@
 # NevAI
-
 <a href="https://discord.com/invite/CttU24eg3F">
     <img src="./public/nevai-discord-banner.png" style="width: 100%;">
 </a>
 
-**A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.**
+
+<p style="text-align: center; font-weight: bold;">A Discord bot that lets admins set an AI channel per server, mention it and it responds using free AI models and Exa.ai (optional), remembering the last 15 messages for context.</p>
+
+<div align="center">
+<img src="https://img.shields.io/badge/NevAI-Your_AI_Bot-blue">
+<a href="https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot"><img src="https://img.shields.io/badge/Add_to_Discord-5865F2?logo=discord&logoColor=white" alt="Add NevAI to your server"></a>
+<img src="https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white" alt="Node 22">
+<a href="./LICENSE"><img src="https://img.shields.io/github/license/Nahida4479/NevAI-Bot"></a>
+<img src="https://github.com/Nahida4479/NevAI-Bot/actions/workflows/docker-built.yml/badge.svg">
+<a href="https://discord.com/invite/CttU24eg3F"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+</div>
 
 # Features
 
