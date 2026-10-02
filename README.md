@@ -1,6 +1,6 @@
 # NevAI
 <a href="https://discord.com/invite/CttU24eg3F">
-    <img src="./public/nevai-discord-banner.png" style="width: 100%;">
+    <img src="./public/nevai-discord-banner-animated.gif" style="width: 100%;">
 </a>
 
 
