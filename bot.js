@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
 import { getAiResponse, getVisionAiResponse } from './src/models.js';
 import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
@@ -109,7 +109,7 @@ client.on('messageCreate', async (message) => {
     const lang = loadLanguage(langCode);
     const guildData = data[message.guildId];
 
-    if (!guildData || !guildData.channel) {
+    if (!guildData?.channels?.length) {
         if (message.mentions.has(client.user)) {
             const reply = await message.reply(lang.noChannelSet);
             setTimeout(() => reply.delete(), 4000);
@@ -117,16 +117,15 @@ client.on('messageCreate', async (message) => {
         return
     }
 
-    if (message.channelId !== guildData.channel) {
+    if (!guildData.channels.includes(message.channelId)) {
         const err_channel_message = 'The bot tried to respond on an undefined AI channel.'
         debug_log_warn(err_channel_message)
         return;
     }
     if (!message.mentions.has(client.user)) return;
 
-    if (!guildData.history) {
-        guildData.history = [];
-    }
+    guildData.histories[message.channelId] ??= [];
+    const history = guildData.histories[message.channelId];
 
     const attachment_txt = message.attachments.filter(a => a.contentType?.startsWith('text/plain')).map(a => a.url);
 
@@ -142,13 +141,13 @@ client.on('messageCreate', async (message) => {
     }
 
     const discord_people_username = `${message.author.username}, Server username: ${message.member.displayName}, Message send time: ${message.createdAt}, (${message.member.roles.highest.name})`
-    guildData.history.push({ role: 'user', content: `${discord_people_username}: ${messageContent}` });
+    history.push({ role: 'user', content: `${discord_people_username}: ${messageContent}` });
 
-    const basePrompt = `You are an assistant named ${client.user.username}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. For every specific fact (item name, character name, stat), you MUST indicate which search result it came from (e.g. "according to Result 1..."). NEVER write "Result N" as part of the sentence grammar (e.g. NOT "According to Result 1, the temperature..." - instead: "The temperature will be X°C. CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a source lists a specific team composition, reproduce the FULL list of team members exactly as given, not just one or two names. Do not summarize a named team into a vague phrase like "works well with X" - list every character mentioned in that composition. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail isn't explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+    const basePrompt = `You are an assistant named ${client.user.username}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. Don't use Discord @everyone and @here on your reply. For every specific fact (item name, character name, stat), you MUST indicate which search result it came from (e.g. "according to Result 1..."). NEVER write "Result N" as part of the sentence grammar (e.g. NOT "According to Result 1, the temperature..." - instead: "The temperature will be X°C. CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a source lists a specific team composition, reproduce the FULL list of team members exactly as given, not just one or two names. Do not summarize a named team into a vague phrase like "works well with X" - list every character mentioned in that composition. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail isn't explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
     const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
-        ...guildData.history
+        ...history
     ]
 
     try {
@@ -224,14 +223,14 @@ client.on('messageCreate', async (message) => {
         { name: 'Internet search', value: response.usedInternetSearch ? `${getEmoji(client, 'success')} ${lang.yes}` : `${getEmoji(client, 'error')} ${lang.no}` },
     ]);
 
-    guildData.history.push({ role: 'assistant', content: response.content });
+    history.push({ role: 'assistant', content: response.content });
 
-    if (guildData.history.length > 15) {
-        guildData.history = guildData.history.slice(-15);
+    const latest = loadData();
+    const latestGuild = latest[message.guildId];
+    if (latestGuild?.channels?.includes(message.channelId)) {
+        latestGuild.histories[message.channelId] = history.slice(-15);
+        saveData(latest)
     }
-
-    data[message.guildId] = guildData;
-    saveData(data);
 
     const replyOption = { content: response.content, flags: MessageFlags.SuppressEmbeds };
 
@@ -268,20 +267,22 @@ client.on('interactionCreate', async (interaction) => {
         const channel = interaction.options.getChannel('channel');
 
         if (channel) {
-            if (!data[interaction.guildId]) {
-                data[interaction.guildId] = {};
-            }
+            data[interaction.guildId] ??= { channels: [], histories: {} };
+            const guild = data[interaction.guildId]
+            guild.channels ??= [];
 
-            if(data[interaction.guildId].channel === channel.id) {
-                delete data[interaction.guildId].channel;
-                saveData(data);
-                await interaction.reply({ content: `${ getEmoji(client, 'success') } ${lang.aiChannelRemoved} ${channel}`, flags: MessageFlags.Ephemeral});
+            const index = guild.channels.indexOf(channel.id);
+            if (index !== -1) {
+                guild.channels.splice(index, 1);
+                delete guild.histories?.[channel.id];
+                saveData(data)
+                await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.aiChannelRemoved} ${channel}`, flags: MessageFlags.Ephemeral });
             } else {
-                data[interaction.guildId].channel = channel.id;
+                guild.channels.push(channel.id);
                 saveData(data);
                 await interaction.reply({ content: `${getEmoji(client, 'success')} ${lang.aiChannelSet} ${channel}`, flags: MessageFlags.Ephemeral });
             }
-        }
+        }   
     }
     
 if (interaction.commandName === 'logs') {
