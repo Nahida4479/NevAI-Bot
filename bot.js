@@ -8,6 +8,7 @@ import { Models } from 'groq-sdk/resources';
 import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 import { sendLogEmbed } from './src/logs_command.js';
+import { startStatusServer } from './src/NevAI_status.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
@@ -48,6 +49,8 @@ const client = new Client({
         GatewayIntentBits.GuildEmojisAndStickers
     ]
 })
+
+startStatusServer(client);
 
 
 process.on('unhandledRejection', (reason) => {

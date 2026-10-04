@@ -2,4 +2,5 @@
 node_modules
 data.json
 debug.log
-
+status_history.json
+docker-compose.override.yml
