@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NevAI — Your AI companion for Discord</title>
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=JetBrains+Mono&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #090808; --surface: #121212; --card: #2b285b; --card-dark: #1a1838;
+      --primary: #463fb0; --accent: #8a7dff; --border: #3e3e64;
+      --text: #ffffff; --muted: #a9a6c9; --green: #3ddc84; --yellow: #f5c451;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: "Jost", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    .page { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px;
+      border-bottom: 1px solid rgba(138,125,255,.6); position: sticky; top: 0; z-index: 10; background: var(--bg); }
+    .brand { display: flex; align-items: center; gap: 8px; font-family: "Anton", sans-serif; font-size: 18px; }
+    .brand img { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(138,125,255,.5); }
+    .links { display: flex; align-items: center; gap: 16px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    .links a:hover { color: var(--text); }
+    .nav-cta { background: var(--primary); color: var(--text) !important; font-weight: 600; padding: 6px 10px; border-radius: 6px; }
+    .nav-cta:hover { background: var(--accent); }
+
+    .hero { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 44px 24px 40px;
+      background: radial-gradient(ellipse 50% 85% at 50% 75%, rgba(70,63,176,.45), transparent), var(--bg); }
+    .hero h1 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 48px; line-height: 1.2; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { color: var(--muted); font-size: 15px; line-height: 1.4; text-align: center; }
+    .code { width: 100%; background: var(--surface); border: 1px solid rgba(138,125,255,.45); border-radius: 10px;
+      padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .code-head { display: flex; justify-content: space-between; align-items: center; }
+    .code-head > span { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+    .copy { display: flex; align-items: center; gap: 6px; border: 0; cursor: pointer; background: rgba(138,125,255,.15);
+      color: var(--accent); font: 500 12px "Jost", sans-serif; padding: 4px 8px; border-radius: 6px; }
+    .copy:hover { background: rgba(138,125,255,.3); }
+    .copy img { width: 12px; height: 12px; object-fit: contain; filter: invert(1); opacity: .8; }
+    .code pre { font-family: "JetBrains Mono", monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+    .code pre b { color: var(--accent); font-weight: 400; user-select: none; }
+    .or { width: 100%; display: flex; align-items: center; gap: 12px; font-family: "Anton", sans-serif; font-size: 16px; color: var(--muted); }
+    .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .btn { width: 100%; display: flex; justify-content: center; padding: 14px 0; border-radius: 10px;
+      font-family: "Bangers", cursive; font-size: 18px; letter-spacing: .5px; transition: transform .15s, box-shadow .15s, background .15s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(90deg, var(--primary), var(--accent)); box-shadow: 0 6px 20px rgba(138,125,255,.35); }
+    .btn-primary:hover { box-shadow: 0 8px 28px rgba(138,125,255,.55); }
+    .btn-outline { border: 1px solid rgba(138,125,255,.5); }
+    .btn-outline:hover { background: rgba(138,125,255,.1); }
+
+    .status { background: var(--surface); padding: 36px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .status-head { display: flex; justify-content: space-between; align-items: center; }
+    .status-head h2 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 28px; }
+    .status-head small { font-size: 12px; color: var(--muted); }
+    .status-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 14px; font-weight: 600; font-size: 16px;
+      background: rgba(61,220,132,.08); border: 1px solid rgba(61,220,132,.35); }
+    .status-card img { width: 32px; height: 32px; }
+    .status-card.offline { background: rgba(255,92,92,.08); border-color: rgba(255,92,92,.35); }
+    .status-card.offline img { filter: grayscale(1) brightness(.7); }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat { background: rgba(43,40,91,.6); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 4px; }
+    .stat span { font-size: 11px; font-weight: 500; letter-spacing: .88px; color: var(--muted); }
+    .stat strong { font-family: "Bangers", cursive; font-weight: 400; font-size: 24px; letter-spacing: .5px; }
+    .uptime { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px; }
+    .uptime-head { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; }
+    .uptime-head b { color: var(--green); font-weight: 600; }
+    .bars { display: flex; gap: 3px; }
+    .bars i { flex: 1; height: 26px; border-radius: 2px; background: rgba(138,125,255,.85); }
+    .bars i.warn { background: var(--yellow); }
+    .bars i.down { background: #ff5c5c; }
+    .legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+    .more { padding: 36px 20px; }
+    .info-card { border: 1px solid var(--primary); border-radius: 18px; padding: 24px 22px; display: flex; flex-direction: column; gap: 12px;
+      background: linear-gradient(149deg, var(--card) 0%, var(--card-dark) 71%); }
+    .info-card h2 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 32px; line-height: 1.1; }
+    .info-card p { color: var(--muted); font-size: 14px; line-height: 1.4; margin-bottom: 4px; }
+    .info-card .btn { font-family: "Anton", sans-serif; padding: 12px 0; letter-spacing: 0; }
+    .btn-solid { background: var(--accent); }
+    .btn-solid:hover { background: #9d92ff; }
+    .info-card .btn-outline { background: rgba(9,8,8,.4); border-color: rgba(138,125,255,.6); }
+
+    footer { border-top: 1px solid var(--border); padding: 20px 0 24px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+    footer a { font-size: 12px; font-weight: 500; color: var(--muted); }
+    footer a:hover { color: var(--text); }
+    footer small { font-size: 11px; color: var(--border); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <a class="brand" href="#"><img src="assets/logo.png" alt="NevAI logo" />NevAI</a>
+      <div class="links">
+        <a href="https://github.com/Nahida4479/NevAI-Bot/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/Nahida4479/NevAI-Bot" target="_blank" rel="noopener">Github</a>
+        <a href="https://discord.com/invite/CttU24eg3F" target="_blank" rel="noopener">Discord</a>
+        <a class="nav-cta" href="https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot" target="_blank" rel="noopener">Add</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>Install <span>NevAI</span></h1>
+      <p>Your AI companion for Discord.<br />Self-host it in one command or add it to your server in seconds.</p>
+      <div class="code">
+        <div class="code-head">
+          <span>bash</span>
+          <button class="copy" id="copyBtn" type="button"><img src="assets/copy.png" alt="" /><span>Copy</span></button>
+        </div>
+        <pre><b>$ </b><code id="installCmd">curl -sSL https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/install/install.sh | bash</code></pre>
+      </div>
+      <div class="or">OR</div>
+      <a class="btn btn-primary" href="https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot" target="_blank" rel="noopener">Add to Discord</a>
+      <a class="btn btn-outline" href="https://github.com/Nahida4479/NevAI-Bot/blob/main/README.md" target="_blank" rel="noopener">Read the Docs</a>
+    </section>
+
+    <section class="status">
+      <div class="status-head"><h2>Bot Status</h2><small id="statusUpdated">Updated 30s ago</small></div>
+      <div class="status-card" id="statusCard"><img src="assets/online.png" alt="" /><span id="statusText">All systems operational</span></div>
+      <div class="stats">
+        <div class="stat"><span>PING</span><strong id="statPing">42 ms</strong></div>
+        <div class="stat"><span>UPTIME</span><strong id="statUptime">12d 4h</strong></div>
+      </div>
+      <div class="uptime">
+        <div class="uptime-head"><span>Uptime · last 30 days</span><b id="uptimePercent">99.8%</b></div>
+        <div class="bars" id="uptimeBars"></div>
+        <div class="legend"><span>30 days ago</span><span>Today</span></div>
+      </div>
+    </section>
+
+    <section class="more">
+      <div class="info-card">
+        <h2>For more information</h2>
+        <p>Check the source code, report issues, or chat with the community.</p>
+        <a class="btn btn-solid" href="https://github.com/Nahida4479/NevAI-Bot" target="_blank" rel="noopener">Open Github →</a>
+        <a class="btn btn-outline" href="https://discord.com/invite/CttU24eg3F" target="_blank" rel="noopener">Join Discord server →</a>
+      </div>
+    </section>
+
+    <footer>
+      <a href="https://github.com/Nahida4479/NevAI-Bot" target="_blank" rel="noopener">NevAI · Open source on GitHub</a>
+      <small>© 2026 NevAI</small>
+    </footer>
+  </div>
+
+  <script>
+    const copyBtn = document.getElementById("copyBtn");
+    copyBtn.addEventListener("click", async () => {
+      const label = copyBtn.querySelector("span");
+      try {
+        await navigator.clipboard.writeText(document.getElementById("installCmd").textContent);
+        label.textContent = "Copied!";
+      } catch {
+        label.textContent = "Failed";
+      }
+      setTimeout(() => (label.textContent = "Copy"), 1500);
+    });
+
+    const status = {
+      online: true,
+      pingMs: 42,
+      uptime: "12d 4h",
+      uptimePercent: 99.8,
+      days: Array.from({ length: 30 }, (_, i) => (i === 17 ? "warn" : "ok")),
+    };
+
+    function renderStatus(s) {
+      document.getElementById("statusCard").classList.toggle("offline", !s.online);
+      document.getElementById("statusText").textContent = s.online ? "All systems operational" : "NevAI is offline";
+      document.getElementById("statPing").textContent = s.online ? `${s.pingMs} ms` : "—";
+      document.getElementById("statUptime").textContent = s.uptime;
+      document.getElementById("uptimePercent").textContent = `${s.uptimePercent}%`;
+      document.getElementById("uptimeBars").innerHTML = s.days.map(d => `<i class="${d === "ok" ? "" : d}"></i>`).join("");
+    }
+    renderStatus(status);
+  </script>
+</body>
+</html>
