@@ -75,6 +75,7 @@
     .bars i { flex: 1; height: 26px; border-radius: 2px; background: rgba(138,125,255,.85); }
     .bars i.warn { background: var(--yellow); }
     .bars i.down { background: #ff5c5c; }
+    .bars i.none { background: var(--border); }
     .legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
 
     .more { padding: 36px 20px; }
@@ -162,23 +163,30 @@
       setTimeout(() => (label.textContent = "Copy"), 1500);
     });
 
-    const status = {
-      online: true,
-      pingMs: 42,
-      uptime: "12d 4h",
-      uptimePercent: 99.8,
-      days: Array.from({ length: 30 }, (_, i) => (i === 17 ? "warn" : "ok")),
-    };
+    const STATUS_URL = "https://nevai-api.nahida4479.org/status";
 
     function renderStatus(s) {
       document.getElementById("statusCard").classList.toggle("offline", !s.online);
       document.getElementById("statusText").textContent = s.online ? "All systems operational" : "NevAI is offline";
-      document.getElementById("statPing").textContent = s.online ? `${s.pingMs} ms` : "—";
+      document.getElementById("statPing").textContent = s.pingMs != null ? `${s.pingMs} ms` : "—";
       document.getElementById("statUptime").textContent = s.uptime;
-      document.getElementById("uptimePercent").textContent = `${s.uptimePercent}%`;
+      document.getElementById("uptimePercent").textContent = s.uptimePercent != null ? `${s.uptimePercent}%` : "—";
       document.getElementById("uptimeBars").innerHTML = s.days.map(d => `<i class="${d === "ok" ? "" : d}"></i>`).join("");
+      document.getElementById("statusUpdated").textContent = `Updated ${new Date().toLocaleTimeString()}`;
     }
-    renderStatus(status);
+
+    async function loadStatus() {
+      try {
+        const res = await fetch(STATUS_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status);
+        renderStatus(await res.json());
+      } catch {
+        renderStatus({ online: false, pingMs: null, uptime: "—", uptimePercent: null, days: Array(30).fill("none") });
+      }
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 60000);
   </script>
 </body>
 </html>
