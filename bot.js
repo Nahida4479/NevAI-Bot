@@ -406,7 +406,9 @@ if (interaction.isButton() && interaction.customId === 'open_prompt') {
         .setCustomId('prompt_input')
         .setLabel(lang.EnterAiPrompt)
         .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true)
+        .setRequired(true);
+    const currentPrompt = data[interaction.guildId]?.prompt;
+    if (currentPrompt) promptInput.setValue(currentPrompt.slice(0, 4000));
 
     const modalRow = new ActionRowBuilder().addComponents(promptInput);
     modal.addComponents(modalRow)
