@@ -17,7 +17,7 @@ if (process.env.GROQ_API) {
 //Free AI Models
 const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
 const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['google/gemini-3-flash-preview']
+const HackClubModels = ['openai/gpt-6-luna'] 
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
 

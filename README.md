@@ -55,7 +55,7 @@ openai/gpt-oss-20b
 
 **HackClub**
 ```yaml
-google/gemini-3-flash-preview
+openai/gpt-6-luna
 ```
 
 **Openrouter**
