@@ -26,5 +26,8 @@
     "yes": "",
     "no": "",
     "noVisionModels": "",
-    "responseErrors": ""
+    "responseErrors": "",
+    "commands_help": "",
+    "HowToUse": "",
+    "HowToUse_answer": ""
 }
