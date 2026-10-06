@@ -26,5 +26,8 @@
     "yes": "Tak",
     "no": "Nie",
     "noVisionModels": "Żaden z modelów wizyjnych nie jest dostępny lub format pliku nie jest obsługiwany",
-    "responseErrors": "Przepraszam, tym razem nie udało mi się wymyślić odpowiedniej odpowiedzi."
+    "responseErrors": "Przepraszam, tym razem nie udało mi się wymyślić odpowiedniej odpowiedzi.",
+    "commands_help": "Komendy dla administratora",
+    "HowToUse": "Jak korzystać z bota?",
+    "HowToUse_answer": "Oznacz bota na kanale AI i zadaj pytanie (Administrator serwera musi dodać kanał /ai)."
 }
