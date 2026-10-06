@@ -388,7 +388,7 @@ if (interaction.commandName === 'help') {
             { name: '`/ai_settings`', value: `${lang.aisettingscommand}`},
             { name: '`/language`',value: `${lang.languagecommand}`},
             { name: '`/logs`', value: `${lang.logscommand}`},
-            { name: `${lang.HowToUse}`, value: `lang.HowToUse_answer`}
+            { name: lang.HowToUse, value: lang.HowToUse_answer}
         );
 
         await interaction.reply({ embeds: [helpEmbed], flags: MessageFlags.Ephemeral });
