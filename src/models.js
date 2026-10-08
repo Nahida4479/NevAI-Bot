@@ -21,7 +21,9 @@ const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-2
 const HackClubModels = ['openai/gpt-6-luna'] 
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
-const anthropic_claude = [""] // Paid AI models
+
+// Paid AI models
+const anthropic_claude = ["claude-haiku-5-5"] 
 
 const claudeTools = tools?.map(t => ({
     name: t.function.name,
@@ -61,7 +63,7 @@ async function callAnthropic_claude(messages) {
                 ]);
                 searchedImageResult = imageResult;
 
-                reponse = await client.create({
+                response = await client.messages.create({
                     max_tokens: 700,
                     system,
                     model,
@@ -69,12 +71,13 @@ async function callAnthropic_claude(messages) {
                     tool_choice: { type: "none" },
                     messages: [
                         ...chat,
-                        { role: "assistant", content: reponse.content },
+                        { role: "assistant", content: response.content },
                         { role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: formatSearchResult(searchResult) }]}
                     ]
                 });
             }
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`));
             return { content: text, model, usedInternetSearch, imageResult: searchedImageResult };
         } catch(err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
