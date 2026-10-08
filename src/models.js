@@ -45,7 +45,7 @@ async function callAnthropic_claude(messages) {
             const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
 
             let response = await client.messages.create({
-                max_tokens: 700,
+                max_tokens: 10000,
                 system,
                 messages: chat,
                 model,
@@ -70,7 +70,7 @@ async function callAnthropic_claude(messages) {
                 searchedImageResult = imageResult;
 
                 response = await client.messages.create({
-                    max_tokens: 700,
+                    max_tokens: 10000,
                     system,
                     model,
                     tools: claudeTools,

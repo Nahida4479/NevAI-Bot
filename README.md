@@ -39,7 +39,7 @@
 
 3. You can customize the bot's options using [administrator commands](#administrator-commands) (server administrator only).
 
-# AI models list (only free models)
+# AI models list (free models)
 
 **Gemini**
 ```yaml
@@ -61,6 +61,15 @@ openai/gpt-6-luna
 **Openrouter**
 ```yaml
 Free models (openrouter/free)
+```
+
+---
+
+# AI models list (paid models)
+
+**Anthropic**
+```yaml
+Claude Haiku 5.5
 ```
 
 ---
@@ -97,7 +106,8 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
  [Groq API](https://console.groq.com/keys) **|**
  [Gemini API](https://aistudio.google.com/api-keys) **|**
  [HackClub API](https://ai.hackclub.com/keys) **|**
- [OpenRouter](https://openrouter.ai)
+ [OpenRouter](https://openrouter.ai) **|**
+ [Anthropic](https://platform.claude.com)
 
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
 
@@ -112,6 +122,7 @@ HACKCLUB_API=
 OPENROUTER_API=
 EXA_API=
 DISCORD_API=
+ANTHROPIC_API=
 DEBUG_MODE= #true/false
 ```
 
