@@ -1,6 +1,7 @@
 import { userMention } from 'discord.js';
 import 'dotenv/config';
 import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
@@ -20,6 +21,78 @@ const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-2
 const HackClubModels = ['openai/gpt-6-luna'] 
 const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
 const openroute = ["openrouter/free"]
+
+// Paid AI models
+const anthropic_claude = ["claude-haiku-5-5"] 
+
+const claudeTools = tools?.map(t => ({
+    name: t.function.name,
+    description: t.function.description,
+    input_schema: t.function.parameters
+}))
+
+async function callAnthropic_claude(messages) {
+    for (const model of anthropic_claude) {
+        let inputTokens = 0;
+        let outputTokens = 0;
+        const system = messages[0].content;
+        const chat = messages.slice(1);
+        while (chat.length && chat[0].role == "assistant") chat.shift();
+        let searchedImageResult
+        let usedInternetSearch = false;
+    
+        try {
+            const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
+
+            let response = await client.messages.create({
+                max_tokens: 10000,
+                system,
+                messages: chat,
+                model,
+                tools: claudeTools
+            });
+
+            inputTokens += response.usage.input_tokens;
+            outputTokens += response.usage.output_tokens;
+
+            if (response.stop_reason === "tool_use") {
+                usedInternetSearch = true;
+                const toolUse = response.content.find(b => b.type === "tool_use");
+                const query = toolUse.input.query || "";
+                if (!query) {
+                    return { content: "Search error", model };
+                }
+
+                const [searchResult, imageResult] = await Promise.all([
+                    exa_request(query),
+                    search_images(query),
+                ]);
+                searchedImageResult = imageResult;
+
+                response = await client.messages.create({
+                    max_tokens: 10000,
+                    system,
+                    model,
+                    tools: claudeTools,
+                    tool_choice: { type: "none" },
+                    messages: [
+                        ...chat,
+                        { role: "assistant", content: response.content },
+                        { role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: formatSearchResult(searchResult) }]}
+                    ]
+                });
+                inputTokens += response.usage.input_tokens
+                outputTokens += response.usage.output_tokens
+            }
+            const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['bgYellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
+            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult };
+        } catch(err) {
+            debug_log_err(`Anthropic model ${model} failed, ${err}`);
+        }
+    }
+    throw new Error("All Anthropic API models failed")
+}
 
 async function callOpenRouter(messages) {
     for (const model of openroute) {
@@ -268,6 +341,13 @@ async function callHackClub(messages) {
 
 
 async function getAiResponse(messages) {
+    try {
+        return await callAnthropic_claude(messages);
+    } catch (err) {
+        const failed_anthropic = `ANTHROPIC_API: Failed`
+        debug_log_err(failed_anthropic);
+    }
+
     try {
         return await callHackClub(messages);
     } catch (err) {

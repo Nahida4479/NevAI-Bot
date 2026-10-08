@@ -25,6 +25,7 @@ ask GROQ_API no
 ask GEMINI_API no
 ask HACKCLUB_API no
 ask OPENROUTER_API no
+ask ANTHROPIC_API no
 ask EXA_API no
 printf 'DEBUG_MODE=true\n' >> .env.tmp
 
