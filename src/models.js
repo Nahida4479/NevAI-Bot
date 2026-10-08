@@ -33,6 +33,8 @@ const claudeTools = tools?.map(t => ({
 
 async function callAnthropic_claude(messages) {
     for (const model of anthropic_claude) {
+        let inputTokens = 0;
+        let outputTokens = 0;
         const system = messages[0].content;
         const chat = messages.slice(1);
         while (chat.length && chat[0].role == "assistant") chat.shift();
@@ -49,6 +51,10 @@ async function callAnthropic_claude(messages) {
                 model,
                 tools: claudeTools
             });
+
+            inputTokens += response.usage.input_tokens;
+            outputTokens =+ response.usage.output_tokens;
+
             if (response.stop_reason === "tool_use") {
                 usedInternetSearch = true;
                 const toolUse = response.content.find(b => b.type === "tool_use");
@@ -77,7 +83,7 @@ async function callAnthropic_claude(messages) {
                 });
             }
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
-            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`));
+            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['yellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
             return { content: text, model, usedInternetSearch, imageResult: searchedImageResult };
         } catch(err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
