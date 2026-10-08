@@ -30,8 +30,8 @@ if (!process.env.DISCORD_API) {
     debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
 }
 
-if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API) {
-    const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter)'
+if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API) {
+    const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter, Anthropic)'
     debug_log_err(err_message)
     process.exit(1);
 } else {
@@ -88,6 +88,11 @@ client.once('clientReady', async () => {
         const warn_openrouter = 'OPENROUTER_API not detected';
         debug_log_warn(warn_openrouter);
     } 
+
+    if (!process.env.ANTHROPIC_API) {
+        const warn_anthropic = 'ANTHROPIC_API not detected'
+        debug_log_warn(warn_anthropic);
+    }
 
     console.log(styleText(['magenta', 'bold'], `Login as ${client.user.tag}`))
     if (process.env.DEBUG_MODE) console.warn(styleText(['yellow', 'bold'], `You are using a version with debug settings enabled.`))
