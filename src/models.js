@@ -53,7 +53,7 @@ async function callAnthropic_claude(messages) {
             });
 
             inputTokens += response.usage.input_tokens;
-            outputTokens =+ response.usage.output_tokens;
+            outputTokens += response.usage.output_tokens;
 
             if (response.stop_reason === "tool_use") {
                 usedInternetSearch = true;
@@ -81,9 +81,11 @@ async function callAnthropic_claude(messages) {
                         { role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: formatSearchResult(searchResult) }]}
                     ]
                 });
+                inputTokens += response.usage.input_tokens
+                outputTokens += response.usage.output_tokens
             }
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
-            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['yellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
+            console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['bgYellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
             return { content: text, model, usedInternetSearch, imageResult: searchedImageResult };
         } catch(err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
