@@ -29,6 +29,12 @@ ask ANTHROPIC_API no
 ask EXA_API no
 printf 'DEBUG_MODE=true\n' >> .env.tmp
 
+if ! grep -qE '^(GROQ_API|GEMINI_API|HACKCLUB_API|OPENROUTER_API|ANTHROPIC_API)=.+' .env.tmp; then
+    echo "Error: add at least one AI API key (Groq, Gemini, HackClub, OpenRouter or Anthropic)."
+    rm -f .env.tmp
+    exit 1
+fi  
+
 mv .env.tmp .env
 chmod 600 .env
 echo "Saved to .env"
