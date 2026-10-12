@@ -90,41 +90,29 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
 
 ## How infographic generation works
 
+## How infographic generation works
+
 ```mermaid
 flowchart TD
-    A["User message on Discord"] --> B["bot.js: build messages,<br/>pass userId + server language"]
-    B --> C["models.js: getAiResponse → callAnthropic_claude"]
-    C --> D{"Claude: use a tool?<br/>(max 3 rounds, last round forces text)"}
+    A["💬 User asks for an infographic on Discord"]
+    B["🤖 Claude calls the create_infographic tool<br/>with a search query and a character name"]
+    C["🔎 Exa searches the web and returns up to 5 pages:<br/>title, URL, page text (up to 1500 characters)<br/>and up to 10 image links per page"]
+    D["🖼️ Claude looks at the image thumbnails<br/>and picks the character portrait"]
+    E["✏️ Claude draws the infographic as SVG<br/>using only facts from the Exa results"]
+    F["⚙️ The bot inserts the portrait<br/>and renders the SVG to PNG"]
+    G["📨 The infographic is sent to Discord<br/>with a short text reply"]
 
-    D -- "No" --> R["Text reply"]
-    D -- "search_web" --> S["Exa search → tool_result"]
-    S --> D
-    D -- "create_infographic" --> L{"limits.js:<br/>slot available?"}
-    L -- "No" --> LM["Limit message → tool_result"]
-    LM --> D
-    L -- "Yes" --> E
+    A --> B --> C --> D --> E --> F --> G
 
-    subgraph IMG ["image.js: createInfographic"]
-        E["Exa search:<br/>page text + image links"] --> F{"subject given?"}
-        F -- "No" --> J
-        F -- "Yes" --> G["Filter image candidates<br/>(pages about subject, png/jpg/webp, max 10)"]
-        G --> H["Claude vision picks the portrait<br/>from 320 px thumbnails"]
-        H --> I{"Portrait found?"}
-        I -- "Yes" --> I2["sharp: crop 600×920 → data URI"]
-        I2 --> J
-        I -- "No (-1)" --> J
-        J["Claude writes SVG<br/>(search facts only, server language,<br/>PORTRAIT_PLACEHOLDER)"] --> K{"SVG valid, safe<br/>and renders?"}
-        K -- "No, attempt 1" --> J
-        K -- "Yes" --> M["Remove [n] markers,<br/>insert portrait data URI"]
-        M --> N["resvg: render PNG (Noto Sans)"]
-    end
+    classDef discord fill:#5865F2,stroke:#3C45A5,color:#FFFFFF
+    classDef claude fill:#D97757,stroke:#A0522D,color:#FFFFFF
+    classDef exa fill:#1E88E5,stroke:#0D47A1,color:#FFFFFF
+    classDef bot fill:#43A047,stroke:#1B5E20,color:#FFFFFF
 
-    K -- "No, attempt 2" --> X["Release slot + refund →<br/>failure tool_result"]
-    X --> D
-    N --> O["Release slot →<br/>success tool_result, PNG kept aside"]
-    O --> D
-
-    R --> P["bot.js: reply with text<br/>+ infographic.png attachment (if any)"]
+    class A,G discord
+    class B,D,E claude
+    class C exa
+    class F bot
 ```
 # Administrator commands
 
