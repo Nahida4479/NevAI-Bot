@@ -24,7 +24,7 @@ const openroute = ["openrouter/free"]
 
 // Paid AI models
 const anthropic_claude = ["claude-haiku-5-5"] 
-const anthropic_image_model = ["claude-haiku-5-5"]
+const anthropic_image_model = 'claude-haiku-5-5'
 
 const claudeTools = tools?.map(t => ({
     name: t.function.name,
