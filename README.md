@@ -88,7 +88,7 @@ qwen/qwen3.8-27b
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
-## How infographic generation works
+## How infographic generation works (only Anthropic models)
 
 
 ```mermaid
