@@ -30,6 +30,7 @@
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
+- Generate infographic (only Anthropic models)
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -87,6 +88,44 @@ qwen/qwen3.8-27b
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
+## How infographic generation works
+
+```mermaid
+flowchart TD
+    A["User message on Discord"] --> B["bot.js: build messages,<br/>pass userId + server language"]
+    B --> C["models.js: getAiResponse → callAnthropic_claude"]
+    C --> D{"Claude: use a tool?<br/>(max 3 rounds, last round forces text)"}
+
+    D -- "No" --> R["Text reply"]
+    D -- "search_web" --> S["Exa search → tool_result"]
+    S --> D
+    D -- "create_infographic" --> L{"limits.js:<br/>slot available?"}
+    L -- "No" --> LM["Limit message → tool_result"]
+    LM --> D
+    L -- "Yes" --> E
+
+    subgraph IMG ["image.js: createInfographic"]
+        E["Exa search:<br/>page text + image links"] --> F{"subject given?"}
+        F -- "No" --> J
+        F -- "Yes" --> G["Filter image candidates<br/>(pages about subject, png/jpg/webp, max 10)"]
+        G --> H["Claude vision picks the portrait<br/>from 320 px thumbnails"]
+        H --> I{"Portrait found?"}
+        I -- "Yes" --> I2["sharp: crop 600×920 → data URI"]
+        I2 --> J
+        I -- "No (-1)" --> J
+        J["Claude writes SVG<br/>(search facts only, server language,<br/>PORTRAIT_PLACEHOLDER)"] --> K{"SVG valid, safe<br/>and renders?"}
+        K -- "No, attempt 1" --> J
+        K -- "Yes" --> M["Remove [n] markers,<br/>insert portrait data URI"]
+        M --> N["resvg: render PNG (Noto Sans)"]
+    end
+
+    K -- "No, attempt 2" --> X["Release slot + refund →<br/>failure tool_result"]
+    X --> D
+    N --> O["Release slot →<br/>success tool_result, PNG kept aside"]
+    O --> D
+
+    R --> P["bot.js: reply with text<br/>+ infographic.png attachment (if any)"]
+```
 # Administrator commands
 
 | **Commands** | **Description** |
