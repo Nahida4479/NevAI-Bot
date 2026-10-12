@@ -1,6 +1,7 @@
 import { createInfographic } from './image.js';
 import { reserveImageSlot, releaseImageSlot } from './limits.js';
 import { debugging, debug_log_err } from '../../debug/debug.js';
+import { styleText } from 'node:util';
 
 const infographicTool = {
     name: 'create_infographic',
@@ -34,7 +35,11 @@ async function runInfographicTool(input, userId, language) {
             language
         });
         releaseImageSlot(userId, true);
-        debugging(`Infographic OK | user: ${userId} | tokens: ${JSON.stringify(result.usage)} | cost: ~$${result.costUsd.toFixed(4)}`);
+        debugging(`Infographic OK | user: ${userId} | tokens: ${JSON.stringify(result.usage)}`);
+               console.log(
+            styleText(['magentaBright', 'bold'], `Anthropic model create infographic for user ${userId}`),
+            styleText(['bgYellow', 'bold'], `Input Tokens: ${result.usage.input} | Output Tokens: ${result.usage.output}`)
+        );
         return {
             text: 'The infographic was created and will be attached to your reply automatically. Do not describe it in detail and do not include any links; just add one short sentence.',
             png: result.png
