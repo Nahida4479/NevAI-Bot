@@ -124,8 +124,8 @@ Use only basic shapes, paths, gradients and <text> with font-family="sans-serif"
 ${portraitRule}
 Use ONLY facts found in the SEARCH RESULTS. If something is not in them, do not invent it; say that no data was found instead.
 Write all text in ${language}. Keep every text inside the canvas with margins and no overlaps. Dark theme, purple accents.
-Add a small footer listing the sources by their [number].
-Keep the SVG compact: no more than about 120 elements, reuse gradients, no decorative filler.`;
+Do not put source numbers like [1] or [2] anywhere in the text. Add a small footer listing only the source site names, separated by commas (e.g. "Sources: Game8").
+Keep the SVG compact: no more than about 120 elements, reuse gradients, no decorative filler. Each line of text must fit inside its box: keep lines under about 55 characters at font-size 14, and split longer facts into several <text> lines instead of one long line.`;
 
     const userContent = `Task: infographic about: ${query}\n\nSEARCH RESULTS:\n${searchText}`;
 
@@ -148,10 +148,17 @@ Keep the SVG compact: no more than about 120 elements, reuse gradients, no decor
             debugging(`SVG attempt ${attempt} invalid (stop_reason: ${response.stop_reason})`);
             continue;
         }
+        svg = svg.replace(/\s*\[\d+\]/g, '');
         if (dataUri) svg = svg.replaceAll('PORTRAIT_PLACEHOLDER', dataUri);
 
         try {
-            const png = new Resvg(svg, { font: { loadSystemFonts: true } }).render().asPng();
+            const png = new Resvg(svg, {
+            font: {
+                loadSystemFonts: true,
+                defaultFontFamily: 'Noto Sans',
+                sansSerifFamily: 'Noto Sans'
+            }
+        }).render().asPng();
             const costUsd = (usage.input * 0.10 + usage.output * 0.50) / 1_000_000;
             return { png, portrait: Boolean(dataUri), usage, costUsd };
         } catch (err) {

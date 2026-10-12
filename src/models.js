@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
+import { infographicTool, runInfographicTool } from './generate_images/tool.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -32,63 +33,76 @@ const claudeTools = tools?.map(t => ({
     input_schema: t.function.parameters
 }))
 
-async function callAnthropic_claude(messages) {
+async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English' } = {}) {
     for (const model of anthropic_claude) {
         let inputTokens = 0;
         let outputTokens = 0;
         const system = messages[0].content;
         const chat = messages.slice(1);
         while (chat.length && chat[0].role == "assistant") chat.shift();
-        let searchedImageResult
+        let searchedImageResult;
         let usedInternetSearch = false;
-    
+        let infographicPng = null;
+
         try {
             const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
+            const allTools = [...(claudeTools ?? [])];
+            if (process.env.EXA_API) allTools.push(infographicTool);
 
-            let response = await client.messages.create({
-                max_tokens: 1700,
-                system,
-                messages: chat,
-                model,
-                tools: claudeTools
-            });
+            const conversation = [...chat];
+            let response;
 
-            inputTokens += response.usage.input_tokens;
-            outputTokens += response.usage.output_tokens;
-
-            if (response.stop_reason === "tool_use") {
-                usedInternetSearch = true;
-                const toolUse = response.content.find(b => b.type === "tool_use");
-                const query = toolUse.input.query || "";
-                if (!query) {
-                    return { content: "Search error", model };
-                }
-
-                const [searchResult, imageResult] = await Promise.all([
-                    exa_request(query),
-                    search_images(query),
-                ]);
-                searchedImageResult = imageResult;
-
+            for (let round = 0; round < 3; round++) {
+                const lastRound = round === 2;
                 response = await client.messages.create({
-                    max_tokens: 1700,
+                    max_tokens: 2500,
                     system,
                     model,
-                    tools: claudeTools,
-                    tool_choice: { type: "none" },
-                    messages: [
-                        ...chat,
-                        { role: "assistant", content: response.content },
-                        { role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: formatSearchResult(searchResult) }]}
-                    ]
+                    tools: allTools,
+                    tool_choice: lastRound ? { type: 'none' } : { type: 'auto' },
+                    messages: conversation
                 });
-                inputTokens += response.usage.input_tokens
-                outputTokens += response.usage.output_tokens
+                inputTokens += response.usage.input_tokens;
+                outputTokens += response.usage.output_tokens;
+
+                if (response.stop_reason !== 'tool_use') break;
+
+                const toolUses = response.content.filter(b => b.type === 'tool_use');
+                const toolResults = [];
+
+                for (const toolUse of toolUses) {
+                    if (toolUse.name === 'search_web') {
+                        usedInternetSearch = true;
+                        const query = toolUse.input.query || '';
+                        if (!query) {
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Missing query', is_error: true });
+                            continue;
+                        }
+                        const [searchResult, imageResult] = await Promise.all([
+                            exa_request(query),
+                            search_images(query),
+                        ]);
+                        searchedImageResult = imageResult;
+                        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: formatSearchResult(searchResult) });
+
+                    } else if (toolUse.name === 'create_infographic') {
+                        const result = await runInfographicTool(toolUse.input, userId, language);
+                        if (result.png) infographicPng = result.png;
+                        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: result.text });
+
+                    } else {
+                        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Unknown tool', is_error: true });
+                    }
+                }
+
+                conversation.push({ role: 'assistant', content: response.content });
+                conversation.push({ role: 'user', content: toolResults });
             }
+
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
             console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['bgYellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
-            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult };
-        } catch(err) {
+            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult, infographicPng };
+        } catch (err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
         }
     }
@@ -341,9 +355,9 @@ async function callHackClub(messages) {
 
 
 
-async function getAiResponse(messages) {
+async function getAiResponse(messages, options = {}) {
     try {
-        return await callAnthropic_claude(messages);
+        return await callAnthropic_claude(messages, options);
     } catch (err) {
         const failed_anthropic = `ANTHROPIC_API: Failed`
         debug_log_err(failed_anthropic);
