@@ -80,16 +80,20 @@ async function createInfographic({ query, subject = '', language = 'English' }) 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API, timeout: 120_000, maxRetries: 1 });
 
     const exa = new Exa(process.env.EXA_API);
-    const exaRes = await exa.search(query, {
+        const exaRes = await exa.search(query, {
         type: 'auto',
-        numResults: 5,
-        contents: { text: { maxCharacters: 1500 }, extras: { imageLinks: 10 } }
+        numResults: 6,
+        contents: {
+            text: { maxCharacters: 3000 },
+            highlights: { query, maxCharacters: 2000 },
+            extras: { imageLinks: 10 }
+        }
     });
     const results = exaRes.results ?? [];
     if (!results.length) throw new Error('No search results');
 
     const searchText = results
-        .map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\n${r.text ?? ''}`)
+        .map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\nKey passages:\n${(r.highlights ?? []).join('\n')}\nPage text:\n${r.text ?? ''}`)
         .join('\n\n');
 
     let dataUri = null;
