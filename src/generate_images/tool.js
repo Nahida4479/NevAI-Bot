@@ -49,4 +49,14 @@ async function runInfographicTool(input, userId, language) {
     }
 }
 
-export { infographicTool, runInfographicTool };
+
+const infographicToolOpenAI = {
+    type: 'function',
+    function: {
+        name: infographicTool.name,
+        description: infographicTool.description,
+        parameters: infographicTool.input_schema
+    }
+};
+
+export { infographicTool, infographicToolOpenAI, runInfographicTool };
