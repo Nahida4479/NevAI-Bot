@@ -67,7 +67,7 @@ async function pickPortrait(client, urls, subject, addUsage) {
     return valid[n]?.buf ?? null;
 }
 
-async function createInfographic({ query, subject = '', language = 'English' }) {
+async function createInfographic({ query, subject = '', instructions = '', language = 'English' }) {
     if (!process.env.EXA_API) throw new Error('EXA_API is not set');
     if (!process.env.ANTHROPIC_API) throw new Error('ANTHROPIC_API is not set');
     if (!query) throw new Error('Missing query');
@@ -127,11 +127,11 @@ Rules: width="1024" height="768" with a matching viewBox, and xmlns="http://www.
 Use only basic shapes, paths, gradients and <text> with font-family="sans-serif". No emoji, no scripts, no external resources.
 ${portraitRule}
 Use ONLY facts found in the SEARCH RESULTS. If something is not in them, do not invent it; say that no data was found instead.
-Write all text in ${language}. Keep every text inside the canvas with margins and no overlaps. Dark theme, purple accents.
+Write all text in ${language}. Keep every text inside the canvas with margins and no overlaps. Dark theme, purple accents unless the user's wishes say otherwise.
 Do not put source numbers like [1] or [2] anywhere in the text. Add a small footer listing only the source site names, separated by commas (e.g. "Sources: Game8").
 Keep the SVG compact: no more than about 120 elements, reuse gradients, no decorative filler. Each line of text must fit inside its box: keep lines under about 55 characters at font-size 14, and split longer facts into several <text> lines instead of one long line.`;
 
-    const userContent = `Task: infographic about: ${query}\n\nSEARCH RESULTS:\n${searchText}`;
+        const userContent = `Task: infographic about: ${query}` + (instructions ? `\nUser's wishes (follow them, but still use only facts from the search results): ${instructions}` : '') + `\n\nSEARCH RESULTS:\n${searchText}`;
 
     for (let attempt = 1; attempt <= 2; attempt++) {
         const response = await client.messages.create({
