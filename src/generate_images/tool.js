@@ -13,10 +13,15 @@ const infographicTool = {
                 type: 'string',
                 description: 'Search query with all needed details, e.g. "Nanally Neverness to Everness build"'
             },
+            instructions: {
+                type: 'string',
+                description: "The user's exact wishes for the infographic: what to include, what to leave out, sections, order, colors or style. Copy them faithfully. Empty string if the user gave none."
+            },
             subject: {
                 type: 'string',
                 description: 'Name of the single character to show as a portrait, e.g. "Nanally". Empty string if the infographic is not about one character.'
             }
+            
         },
         required: ['query']
     }
@@ -32,6 +37,7 @@ async function runInfographicTool(input, userId, language) {
         const result = await createInfographic({
             query: input.query,
             subject: input.subject ?? '',
+            instructions: input.instructions ?? '',
             language
         });
         releaseImageSlot(userId, true);
