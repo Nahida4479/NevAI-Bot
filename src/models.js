@@ -56,6 +56,56 @@ async function executeTool(name, input, ctx) {
     return 'Unknown tool';
 }
 
+
+function newCtx(userId, language) {
+    return { userId, language, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
+}
+
+function toolOptions(lastRound) {
+    if (!openAITools.length) return {};
+    return { tools: openAITools, tool_choice: lastRound ? 'none' : 'auto' };
+}
+
+async function runToolLoop(sendRequest, messages, ctx) {
+    const conversation = [...messages];
+    let data;
+    let message;
+
+    for (let round = 0; round < 3; round++) {
+        const lastRound = round === 2;
+        data = await sendRequest(conversation, lastRound);
+        if (!data?.choices?.length) {
+            throw new Error(`No choices in response: ${JSON.stringify(data?.error ?? data).slice(0, 200)}`);
+        }
+        message = data.choices[0].message;
+
+        if (!message.tool_calls?.length) break;
+
+        conversation.push(message);
+        for (const toolCall of message.tool_calls) {
+            let input = {};
+            try {
+                input = JSON.parse(toolCall.function.arguments || '{}');
+            } catch {
+                debugging(`Bad tool arguments: ${toolCall.function.arguments}`);
+            }
+            const content = await executeTool(toolCall.function.name, input, ctx);
+            conversation.push({ role: 'tool', tool_call_id: toolCall.id, content });
+        }
+    }
+    return { data, message };
+}
+
+function buildResult(content, model, ctx) {
+    return {
+        content,
+        model,
+        usedInternetSearch: ctx.usedInternetSearch,
+        imageResult: ctx.imageResult,
+        infographicPng: ctx.infographicPng
+    };
+}
+
 async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English' } = {}) {
     for (const model of anthropic_claude) {
         let inputTokens = 0;
@@ -132,140 +182,73 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
     throw new Error("All Anthropic API models failed")
 }
 
-async function callOpenRouter(messages) {
-    for (const model of openroute) {
-        let searchedImageResult;
-        let usedInternetSearch = false;
-        let searchResult;
+async function callHackClub(messages, { userId = 'unknown', language = 'English' } = {}) {
+    for (const model of HackClubModels) {
+        const ctx = newCtx(userId, language);
         try {
-        let response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${process.env.OPENROUTER_API}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ model, messages, tools }) 
-        });
-        let data = await response.json();
-        let message = data.choices[0].message;
+            const { message } = await runToolLoop(async (conversation, lastRound) => {
+                const res = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${process.env.HACKCLUB_API}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                });
+                return res.json();
+            }, messages, ctx);
 
-        let tool_rounds = 0;
-        while (message.tool_calls && tool_rounds < 1) {
-            usedInternetSearch = true;
-            const toolCall = message.tool_calls[0];
-            const args = JSON.parse(toolCall.function.arguments);
-            const query = args.query || '';
-            if (!query) {
-                return { content: "I tried to search but didn't have a clear query.", model: model };
-            }
-        
-
-        [searchResult, searchedImageResult] = await Promise.all([
-            exa_request(query),
-            search_images(query),
-        ])
-            debugging(searchedImageResult)
-            debugging(searchResult)
-            debugging(search_images)
-
-        const followUpMessage = [
-            ...messages,
-            message,
-            { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
-        ]
-            
-        const isLastRound = tool_rounds === 2
-            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${process.env.OPENROUTER_API}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" })
-            })
-        data = await response.json();
-        message = data.choices[0].message;
-        tool_rounds++;
-
+            console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
+            return buildResult(message.content, model, ctx);
+        } catch (err) {
+            debug_log_err(`HackClub model ${model} failed ${err}`);
         }
-        console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
-        return { content: data.choices[0].message.content, model: data.model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult };
-    } catch (err) {
-        const logs_err = `OpenRouter model ${model} failed ${err}`
-        debug_log_err(logs_err)
     }
-}
-    throw new Error(`All OpenRouter models failed`)
-
+    throw new Error(`All HackClub API models failed`)
 }
 
-async function callGroq(messages) {
-    for (const model of groqModels) {
-        let usedInternetSearch = false;
-        let searchedImageResult;
-        let searchResult;
-        debugging(searchedImageResult);
+async function callOpenRouter(messages, { userId = 'unknown', language = 'English' } = {}) {
+    for (const model of openroute) {
+        const ctx = newCtx(userId, language);
         try {
+            const { data, message } = await runToolLoop(async (conversation, lastRound) => {
+                const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${process.env.OPENROUTER_API}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                });
+                return res.json();
+            }, messages, ctx);
 
-            let response = await groq.chat.completions.create({ messages, model, tools });
-            let message = response.choices[0].message;
-            let tool_rounds = 0
+            console.log(styleText(['greenBright', 'bold'], `OPENROUTER_API: ${data.model}`));
+            return buildResult(message.content, data.model, ctx);
+        } catch (err) {
+            debug_log_err(`OpenRouter model ${model} failed ${err}`);
+        }
+    }
+    throw new Error(`All OpenRouter models failed`)
+}
 
-            while (message.tool_calls && tool_rounds < 1) {
-                const toolCall = message.tool_calls[0];
-                const args = JSON.parse(toolCall.function.arguments);
-                const query = args.query || '';
-                const query_success = `The model wants to search:, ${query}`;
-                debug_log_success(query_success);
-                usedInternetSearch = true;
-                if (!query) {
-                    return { content: "I tried to search but didn't have a clear query.", model: model }; 
+async function callGroq(messages, { userId = 'unknown', language = 'English' } = {}) {
+    for (const model of groqModels) {
+        const ctx = newCtx(userId, language);
+        try {
+            const { message } = await runToolLoop(async (conversation, lastRound) => {
+                try {
+                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound) });
+                } catch (err) {
+                    if (lastRound && String(err.message).includes('tool_use_failed')) {
+                        debug_log_warn('Groq ignored tool_choice: none, retrying without tools');
+                        return await groq.chat.completions.create({
+                            model,
+                            messages: [...conversation, { role: 'system', content: 'Respond in plain text only. Do not call any function or tool.' }]
+                        });
+                    }
+                    throw err;
                 }
+            }, messages, ctx);
 
-                [searchResult, searchedImageResult] = await Promise.all([
-                    exa_request(query),
-                    search_images(query),
-                ])
-                    debugging(searchedImageResult),
-                    debugging(searchResult)
-                    debugging(search_images)
-
-
-                const followUpMessage = [
-                    ...messages,
-                    message,
-                    { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
-                ]
-
-                    const isLastRound = tool_rounds === 2
-                    try {
-                response = await groq.chat.completions.create({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" });
-                      } catch (toolErr) {
-                        if (isLastRound && toolErr.message && toolErr.message.includes('tool_use_failed')) {
-                            const warn_err = 'Groq ignored tool_choice: none, retrying without tools'
-                            debug_log_warn(warn_err)
-                            response = await groq.chat.completions.create({
-                                messages: [...followUpMessage, { role: 'system', content: "Respond in plain text only.Do not call any function or tool." }],
-                                model
-                            });
-                        } else {
-                            debugging(toolErr)
-                            throw toolErr
-                        }
-                      }  
-                    message = response.choices[0].message;
-                    tool_rounds++;
-            }
-
-            const tool_response = `Tool calls:', ${JSON.stringify(response.choices[0].message.tool_calls, null, 2)}`
-            debugging(tool_response)
-
-            const model_groq_api = `GROQ_API: ${model}`
-            console.log(styleText(['greenBright', 'bold'], model_groq_api));
-            return { content: response.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult };
-        } catch(err) {
-            const logs_groq_message = `Groq model ${model} failed, ${err}`;
-            debug_log_err(logs_groq_message)
+            console.log(styleText(['greenBright', 'bold'], `GROQ_API: ${model}`));
+            return buildResult(message.content, model, ctx);
+        } catch (err) {
+            debug_log_err(`Groq model ${model} failed, ${err}`);
         }
     }
     throw new Error(`All Groq Api models failed`)
@@ -309,63 +292,6 @@ async function callGemini(messages) {
     throw Error(`All Gemini API models failed`)
 }  
 
-async function callHackClub(messages, { userId = 'unknown', language = 'English' } = {}) {
-    for (const model of HackClubModels) {
-        const ctx = { userId, language, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
-        try {
-            const conversation = [...messages];
-            let message;
-
-            for (let round = 0; round < 3; round++) {
-                const lastRound = round === 2;
-                const response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${process.env.HACKCLUB_API}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model,
-                        messages: conversation,
-                        tools: openAITools.length ? openAITools : undefined,
-                        tool_choice: openAITools.length ? (lastRound ? 'none' : 'auto') : undefined
-                    })
-                });
-                const data = await response.json();
-                message = data.choices[0].message;
-
-                if (!message.tool_calls?.length) break;
-
-                conversation.push(message);
-                for (const toolCall of message.tool_calls) {
-                    let input = {};
-                    try {
-                        input = JSON.parse(toolCall.function.arguments || '{}');
-                    } catch {
-                        debugging(`Bad tool arguments: ${toolCall.function.arguments}`);
-                    }
-                    const content = await executeTool(toolCall.function.name, input, ctx);
-                    conversation.push({ role: 'tool', tool_call_id: toolCall.id, content });
-                }
-            }
-
-            console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
-            return {
-                content: message.content,
-                model,
-                usedInternetSearch: ctx.usedInternetSearch,
-                imageResult: ctx.imageResult,
-                infographicPng: ctx.infographicPng
-            };
-        } catch (err) {
-            debug_log_err(`HackClub model ${model} failed ${err}`);
-        }
-    }
-    throw new Error(`All HackClub API models failed`)
-}
-
-
-
 async function getAiResponse(messages, options = {}) {
     try {
         return await callHackClub(messages, options);
@@ -373,7 +299,7 @@ async function getAiResponse(messages, options = {}) {
         const failed_hc = `HACKCLUB_API: Failed`
         debug_log_err(failed_hc)
     }
-    
+
     try {
         return await callAnthropic_claude(messages, options);
     } catch (err) {
@@ -382,14 +308,14 @@ async function getAiResponse(messages, options = {}) {
     }
 
     try {
-        return await callGroq(messages);
+        return await callGroq(messages, options);
     } catch (err) {
         const failed_q = `GROQ_API: Failed`
         debug_log_err(failed_q)
     }
 
     try {
-        return await callOpenRouter(messages);
+        return await callOpenRouter(messages, options);
     } catch (err) {
         const failed_opr = `OPENROUTER_API: Failed`
         debug_log_err(failed_opr)
