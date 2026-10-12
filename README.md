@@ -30,6 +30,7 @@
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
+- Generate infographic (only Anthropic models)
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -87,6 +88,27 @@ qwen/qwen3.8-27b
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
+## How infographic generation works (only Anthropic models)
+
+
+```mermaid
+flowchart LR
+    A["User asks<br/>on Discord"] --> B["Claude calls<br/>create_infographic"]
+    B --> C["Exa returns 5 pages:<br/>title, URL, text,<br/>image links"]
+    C --> D["Claude picks portrait<br/>& draws SVG from facts"]
+    D --> E["Bot renders<br/>SVG → PNG"]
+    E --> F["PNG sent<br/>to Discord"]
+
+    classDef discord fill:#5865F2,stroke:#3C45A5,color:#FFFFFF
+    classDef claude fill:#D97757,stroke:#A0522D,color:#FFFFFF
+    classDef exa fill:#1E88E5,stroke:#0D47A1,color:#FFFFFF
+    classDef bot fill:#43A047,stroke:#1B5E20,color:#FFFFFF
+
+    class A,F discord
+    class B,D claude
+    class C exa
+    class E bot
+```
 # Administrator commands
 
 | **Commands** | **Description** |

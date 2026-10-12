@@ -205,7 +205,7 @@ client.on('messageCreate', async (message) => {
         }
     } else {
         try {
-        response = await getAiResponse(messageToSend)
+        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName })
         await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
@@ -249,7 +249,10 @@ client.on('messageCreate', async (message) => {
 
     const replyOption = { content: response.content, flags: MessageFlags.SuppressEmbeds };
 
-    if (response.imageResult && response.imageResult.length > 0) {
+
+     if (response.infographicPng) {
+        replyOption.files = [new AttachmentBuilder(response.infographicPng, { name: 'infographic.png' })];
+    } else if (response.imageResult && response.imageResult.length > 0) {
         try {
         const imgResponse = await fetch(response.imageResult[0].imageUrl);
         const imgBuffer = Buffer.from(await imgResponse.arrayBuffer());

@@ -4,3 +4,5 @@ data.json
 debug.log
 status_history.json
 docker-compose.override.yml
+local_beta
+local_beta/*
