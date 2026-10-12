@@ -88,7 +88,7 @@ qwen/qwen3.8-27b
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
-## How infographic generation works (only Anthropic models)
+## How infographic generation works (Required Anthropic models and Exa.ai)
 
 
 ```mermaid
@@ -109,6 +109,11 @@ flowchart LR
     class C exa
     class E bot
 ```
+
+If both `ANTHROPIC_API` and `EXA_API` are set in .env, every provider __except vision models and Gemini__ gets access to the create_infographic tool. The tool generates custom infographics based on the data returned by Exa. The infographic itself is always drawn by an Anthropic model (tested with Haiku 5.5).
+
+For example, if you are currently using the `Hack Club provider`, its model (as long as it supports tools) can request an infographic. The bot then searches `Exa` for facts and images, and the `Anthropic model` picks the character portrait and draws the infographic. The finished image is attached to the reply on Discord, and the main model only receives a confirmation that the infographic was created, so it can add a short message.
+
 # Administrator commands
 
 | **Commands** | **Description** |
