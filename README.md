@@ -90,15 +90,14 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
 
 ## How infographic generation works
 
-## How infographic generation works
 
 ```mermaid
 flowchart LR
-    A["💬 User asks<br/>on Discord"] --> B["🤖 Claude calls<br/>create_infographic"]
-    B --> C["🔎 Exa returns 5 pages:<br/>title, URL, text,<br/>image links"]
-    C --> D["✏️ Claude picks portrait<br/>& draws SVG from facts"]
-    D --> E["⚙️ Bot renders<br/>SVG → PNG"]
-    E --> F["📨 PNG sent<br/>to Discord"]
+    A["User asks<br/>on Discord"] --> B["Claude calls<br/>create_infographic"]
+    B --> C["Exa returns 5 pages:<br/>title, URL, text,<br/>image links"]
+    C --> D["Claude picks portrait<br/>& draws SVG from facts"]
+    D --> E["Bot renders<br/>SVG → PNG"]
+    E --> F["PNG sent<br/>to Discord"]
 
     classDef discord fill:#5865F2,stroke:#3C45A5,color:#FFFFFF
     classDef claude fill:#D97757,stroke:#A0522D,color:#FFFFFF
