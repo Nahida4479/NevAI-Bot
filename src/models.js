@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../debug/debug.js';
 import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
-import { infographicTool, runInfographicTool } from './generate_images/tool.js';
+import { infographicTool, infographicToolOpenAI, runInfographicTool } from './generate_images/tool.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -32,6 +32,29 @@ const claudeTools = tools?.map(t => ({
     description: t.function.description,
     input_schema: t.function.parameters
 }))
+
+const openAITools = [...(tools ?? [])];
+if (process.env.EXA_API && process.env.ANTHROPIC_API) openAITools.push(infographicToolOpenAI);
+
+async function executeTool(name, input, ctx) {
+    if (name === 'search_web') {
+        const query = input.query || '';
+        if (!query) return 'Missing query';
+        ctx.usedInternetSearch = true;
+        const [searchResult, imageResult] = await Promise.all([
+            exa_request(query),
+            search_images(query),
+        ]);
+        ctx.imageResult = imageResult;
+        return formatSearchResult(searchResult);
+    }
+    if (name === 'create_infographic') {
+        const result = await runInfographicTool(input, ctx.userId, ctx.language);
+        if (result.png) ctx.infographicPng = result.png;
+        return result.text;
+    }
+    return 'Unknown tool';
+}
 
 async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English' } = {}) {
     for (const model of anthropic_claude) {
@@ -286,68 +309,56 @@ async function callGemini(messages) {
     throw Error(`All Gemini API models failed`)
 }  
 
-async function callHackClub(messages) {
-        for (const model of HackClubModels) {
-        let searchedImageResult;
-        debugging(searchedImageResult);
-        let usedInternetSearch = false;
-        let searchResult;
-            try {
-        let response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
-            method: "POST",
-            headers: {
-                'Authorization': `Bearer ${process.env.HACKCLUB_API}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ model, messages, tools})
-        }); 
-        let data = await response.json();
-        let message = data.choices[0].message;
+async function callHackClub(messages, { userId = 'unknown', language = 'English' } = {}) {
+    for (const model of HackClubModels) {
+        const ctx = { userId, language, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
+        try {
+            const conversation = [...messages];
+            let message;
 
-        let tool_rounds = 0;
-        while (message.tool_calls && tool_rounds < 1) {
-            usedInternetSearch = true;
-            const toolCall = message.tool_calls[0];
-            const args = JSON.parse(toolCall.function.arguments);
-            const query = args.query || '';
-            if (!query) {
-                return { content: "I tried to search but didn't have a clear query.", model: model };
+            for (let round = 0; round < 3; round++) {
+                const lastRound = round === 2;
+                const response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${process.env.HACKCLUB_API}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: conversation,
+                        tools: openAITools.length ? openAITools : undefined,
+                        tool_choice: openAITools.length ? (lastRound ? 'none' : 'auto') : undefined
+                    })
+                });
+                const data = await response.json();
+                message = data.choices[0].message;
+
+                if (!message.tool_calls?.length) break;
+
+                conversation.push(message);
+                for (const toolCall of message.tool_calls) {
+                    let input = {};
+                    try {
+                        input = JSON.parse(toolCall.function.arguments || '{}');
+                    } catch {
+                        debugging(`Bad tool arguments: ${toolCall.function.arguments}`);
+                    }
+                    const content = await executeTool(toolCall.function.name, input, ctx);
+                    conversation.push({ role: 'tool', tool_call_id: toolCall.id, content });
+                }
             }
 
-
-            [searchResult, searchedImageResult] = await Promise.all([
-                exa_request(query),
-                search_images(query),
-            ])
-                debugging(searchedImageResult),
-                debugging(searchResult)
-                debugging(search_images)
-
-
-            const followUpMessage = [
-                ...messages,
-                message,
-                { role: 'tool', tool_call_id: toolCall.id, content: formatSearchResult(searchResult) }
-            ]
-
-            const isLastRound = tool_rounds === 2
-            response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${process.env.HACKCLUB_API}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ model, messages: followUpMessage, tools, tool_choice: isLastRound ? "none" : "auto" })
-            })
-            data = await response.json();
-            message = data.choices[0].message;
-            tool_rounds++;
-        }
-        console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
-        return { content: data.choices[0].message.content, model: model, usedInternetSearch: usedInternetSearch, imageResult: searchedImageResult};
+            console.log(styleText(['greenBright', 'bold'], `HACKCLUB_API: ${model}`));
+            return {
+                content: message.content,
+                model,
+                usedInternetSearch: ctx.usedInternetSearch,
+                imageResult: ctx.imageResult,
+                infographicPng: ctx.infographicPng
+            };
         } catch (err) {
-            const logs_hackclub = `HackClub model ${model} failed ${err}`
-            debug_log_err(logs_hackclub)
+            debug_log_err(`HackClub model ${model} failed ${err}`);
         }
     }
     throw new Error(`All HackClub API models failed`)
@@ -357,17 +368,17 @@ async function callHackClub(messages) {
 
 async function getAiResponse(messages, options = {}) {
     try {
+        return await callHackClub(messages, options);
+    } catch (err) {
+        const failed_hc = `HACKCLUB_API: Failed`
+        debug_log_err(failed_hc)
+    }
+    
+    try {
         return await callAnthropic_claude(messages, options);
     } catch (err) {
         const failed_anthropic = `ANTHROPIC_API: Failed`
         debug_log_err(failed_anthropic);
-    }
-
-    try {
-        return await callHackClub(messages);
-    } catch (err) {
-        const failed_hc = `HACKCLUB_API: Failed`
-        debug_log_err(failed_hc)
     }
 
     try {
