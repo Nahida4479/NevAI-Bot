@@ -93,26 +93,22 @@ The model decides for itself whether it wants to use Exa.ai. When the model uses
 ## How infographic generation works
 
 ```mermaid
-flowchart TD
-    A["💬 User asks for an infographic on Discord"]
-    B["🤖 Claude calls the create_infographic tool<br/>with a search query and a character name"]
-    C["🔎 Exa searches the web and returns up to 5 pages:<br/>title, URL, page text (up to 1500 characters)<br/>and up to 10 image links per page"]
-    D["🖼️ Claude looks at the image thumbnails<br/>and picks the character portrait"]
-    E["✏️ Claude draws the infographic as SVG<br/>using only facts from the Exa results"]
-    F["⚙️ The bot inserts the portrait<br/>and renders the SVG to PNG"]
-    G["📨 The infographic is sent to Discord<br/>with a short text reply"]
-
-    A --> B --> C --> D --> E --> F --> G
+flowchart LR
+    A["💬 User asks<br/>on Discord"] --> B["🤖 Claude calls<br/>create_infographic"]
+    B --> C["🔎 Exa returns 5 pages:<br/>title, URL, text,<br/>image links"]
+    C --> D["✏️ Claude picks portrait<br/>& draws SVG from facts"]
+    D --> E["⚙️ Bot renders<br/>SVG → PNG"]
+    E --> F["📨 PNG sent<br/>to Discord"]
 
     classDef discord fill:#5865F2,stroke:#3C45A5,color:#FFFFFF
     classDef claude fill:#D97757,stroke:#A0522D,color:#FFFFFF
     classDef exa fill:#1E88E5,stroke:#0D47A1,color:#FFFFFF
     classDef bot fill:#43A047,stroke:#1B5E20,color:#FFFFFF
 
-    class A,G discord
-    class B,D,E claude
+    class A,F discord
+    class B,D claude
     class C exa
-    class F bot
+    class E bot
 ```
 # Administrator commands
 
