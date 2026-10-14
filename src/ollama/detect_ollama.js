@@ -1,12 +1,13 @@
 import { configDotenv } from "dotenv";
 import { debug_log_err, debug_log_success } from "../../debug/debug.js";
 import { styleText } from 'node:util';
+import { debugging } from "../../debug/debug.js";
 
 let ollamaModel = null;
 let lastOllamaCheck = 0;
 
 async function detectOllama() {
-    const baseUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    const baseUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
     try {
         const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(2000) });
         if (!res.ok) return null; 
@@ -15,12 +16,12 @@ async function detectOllama() {
         console.log(styleText(['greenBright', 'bold'], 'Ollama models detected:'), styleText(['bgGreen', 'bold'], `${names}`));
         if (names.includes(process.env.OLLAMA_MODEL)) return process.env.OLLAMA_MODEL;
         return names[0] ?? null;
-    } catch {
+    } catch (err) {
+        console.log(styleText(['red', 'bold'], `Ollama error: ${err}`));
+        debugging(err)
         return null;
     }
 }
-
-await detectOllama();
 
 async function getOllamaModel() {
     if (Date.now() - lastOllamaCheck > 60_000) {
@@ -31,7 +32,7 @@ async function getOllamaModel() {
 }
 
 async function callOllama (messages, model) {
-    const baseUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    const baseUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 
     const response = await fetch(`${baseUrl}/v1/chat/completions`, {
         method: 'POST',

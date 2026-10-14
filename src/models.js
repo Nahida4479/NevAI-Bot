@@ -13,7 +13,7 @@ if (process.env.GROQ_API) {
     groq = new Groq({ apiKey: process.env.GROQ_API });
 } else {
     const err = `GROQ_API not set - Groq models are not avaliable.`
-    debug_log_warn(err)
+    debugging(err)
 }
 
 
