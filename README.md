@@ -31,6 +31,7 @@
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
 - Generate infographic (only Anthropic models)
+- Running local models using Ollama
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -66,16 +67,7 @@ Free models (openrouter/free)
 
 ---
 
-# AI models list (paid models)
-
-**Anthropic**
-```yaml
-Claude Haiku 5.5
-```
-
----
-
-## Models for vision
+## Models for vision (free)
 
 **Groq**
 ```yaml
@@ -84,6 +76,16 @@ qwen/qwen3.8-27b
 ```
 > [!WARNING]
 > The model list may change at any time. Free models can be renamed, limited or removed by their providers.
+
+
+# AI models list (paid models)
+
+**Anthropic**
+```yaml
+Claude Haiku 5.5
+```
+
+
 ## Models web search ([Exa.ai](https://exa.ai/))
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.

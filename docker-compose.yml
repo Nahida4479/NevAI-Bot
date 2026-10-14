@@ -3,6 +3,7 @@ services:
     image: ghcr.io/nahida4479/nevai:latest
     container_name: nevai
     restart: unless-stopped
+    network_mode: host
     env_file: .env
     volumes:
       - ./data.json:/NevAI/data.json
