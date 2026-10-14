@@ -141,7 +141,7 @@ For example, if you are currently using the `Hack Club provider`, its model (as 
 
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
 
-#### Ollama
+### Ollama
 Ollama is detected automatically. Make sure it is running and has at least one chat model downloaded (e.g. `ollama pull gemma3:12b`). By default, the bot looks for Ollama at `http://127.0.0.1:11434` if no address is set in `.env` under `OLLAMA_URL=`. If no AI model is set under `OLLAMA_MODEL=` in `.env`, the first detected model is used. Embedding models are skipped.
 
 > [!WARNING]
