@@ -160,6 +160,8 @@ EXA_API=
 DISCORD_API=
 ANTHROPIC_API=
 DEBUG_MODE= #true/false
+OLLAMA_MODEL= # By default, the first model returned by Ollama
+OLLAMA_URL= # Default http://127.0.0.1:11434
 ```
 
 > [!NOTE]
