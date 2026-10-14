@@ -112,7 +112,7 @@ flowchart LR
     class E bot
 ```
 
-If both `ANTHROPIC_API` and `EXA_API` are set in `.env`, every provider __except vision models and Gemini__ gets access to the `create_infographic tool`. The tool generates custom infographics based on the data returned by `Exa`. The infographic itself is always **drawn by an Anthropic model** (tested with Haiku 5.5).
+If both `ANTHROPIC_API` and `EXA_API` are set in `.env`, every provider __except Gemini, Ollama and vision models__ gets access to the `create_infographic` tool. The tool generates custom infographics based on the data returned by `Exa`. The infographic itself is always **drawn by an Anthropic model** (tested with Haiku 5.5).
 
 For example, if you are currently using the `Hack Club provider`, its model (as long as it supports tools) can request an infographic. The bot then searches `Exa` for facts and images, and the `Anthropic model` picks the character portrait and draws the infographic. The finished image is attached to the **reply on Discord**, and the main model only receives a confirmation that the infographic was created, so it can add a short message.
 
