@@ -49,7 +49,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildEmojisAndStickers
-    ]
+    ],
+    allowedMentions: { parse: [], repliedUser: true }
 })
 
 startStatusServer(client);
