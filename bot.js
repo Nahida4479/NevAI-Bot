@@ -14,7 +14,9 @@ import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './d
 import { styleText } from 'node:util';
 import { readFileSync } from 'node:fs';
 import net from 'node:net';
+import { detectOllama, getOllamaModel } from './src/ollama/detect_ollama.js';
 net.setDefaultAutoSelectFamily(false);
+const detectedOllama = await detectOllama();
 
 if (!process.env.DISCORD_API) {
     const err_message = 'DISCORD_API not detected. Please add your API!'
@@ -30,8 +32,8 @@ if (!process.env.DISCORD_API) {
     debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
 }
 
-if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API) {
-    const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter, Anthropic)'
+if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API && !detectedOllama ) {
+    const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter, Anthropic) or run Ollama'
     debug_log_err(err_message)
     process.exit(1);
 } else {

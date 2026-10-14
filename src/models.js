@@ -6,6 +6,7 @@ import { debugging, debug_log_warn, debug_log_err, debug_log_success } from '../
 import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
 import { infographicTool, infographicToolOpenAI, runInfographicTool } from './generate_images/tool.js';
+import { callOllama, getOllamaModel } from './ollama/detect_ollama.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -293,6 +294,21 @@ async function callGemini(messages) {
 }  
 
 async function getAiResponse(messages, options = {}) {
+
+    try {
+        const ollama_model = await getOllamaModel();
+        if (ollama_model) {
+            try {
+                return await callOllama(messages, ollama_model);
+            } catch (err) {
+                debug_log_err(`OLLAMA: Failed ${err}`)
+                debugging(err)
+            }
+        } 
+    } catch (err) {
+        debugging(err)
+    }
+
     try {
         return await callHackClub(messages, options);
     } catch (err) {
