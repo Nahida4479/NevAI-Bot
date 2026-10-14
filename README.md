@@ -130,17 +130,22 @@ For example, if you are currently using the `Hack Club provider`, its model (as 
 
 # Requirements
 
-#### Minimum 1 of the listed AI APIs:
+#### At least one of the listed AI providers:
 
  [Groq API](https://console.groq.com/keys) **|**
  [Gemini API](https://aistudio.google.com/api-keys) **|**
  [HackClub API](https://ai.hackclub.com/keys) **|**
  [OpenRouter](https://openrouter.ai) **|**
- [Anthropic](https://platform.claude.com)
+ [Anthropic](https://platform.claude.com) **|**
+ [Ollama](https://ollama.com) (Ollama running locally, no API key needed)
 
 You'll also need a [Discord Application](https://discord.com/developers/applications) to get __your bot token__ and optionally an [Exa.ai](https://exa.ai/) API key (so the models can search for information on the internet).
 
+#### Ollama
+Ollama is detected automatically. Make sure it is running and has at least one chat model downloaded (e.g. `ollama pull gemma3:12b`). By default, the bot looks for Ollama at `http://127.0.0.1:11434` if no address is set in `.env` under `OLLAMA_URL=`. If no AI model is set under `OLLAMA_MODEL=` in `.env`, the first detected model is used. Embedding models are skipped.
 
+> [!WARNING]
+> Internet search and infographic generation are not available when using Ollama.
 
 ## Env
 
@@ -176,7 +181,7 @@ curl -fsSL -o .env https://raw.githubusercontent.com/Nahida4479/NevAI-Bot/main/e
 nano .env
 chmod 600 .env
 touch data.json
-docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --name nevai --restart unless-stopped ghcr.io/nahida4479/nevai:latest
+docker run -d --env-file .env -v $(pwd)/data.json:/NevAI/data.json --network host --name nevai --restart unless-stopped ghcr.io/nahida4479/nevai:latest
 ```
 
 # License 
