@@ -9,8 +9,6 @@ ask() {
     local name="$1"
     local required="$2"
     local value=""
-    read -r -p "$name ($hint): " value < /dev/tty
-    printf '%s=%s\n' "$name" "$value" >> .env.tmp
     while true; do
         read -r -s -p "$name: " value < /dev/tty
         echo
@@ -19,6 +17,14 @@ ask() {
         fi
         echo "This value is required."
     done
+    printf '%s=%s\n' "$name" "$value" >> .env.tmp
+}
+
+ask_visible() {
+    local name="$1"
+    local hint="$2"
+    local value=""
+    read -r -p "$name ($hint): " value < /dev/tty
     printf '%s=%s\n' "$name" "$value" >> .env.tmp
 }
 
