@@ -30,5 +30,6 @@
     "commands_help": "Komendy dla administratora",
     "HowToUse": "Jak korzystać z bota?",
     "HowToUse_answer": "Oznacz bota na kanale AI i zadaj pytanie (Administrator serwera musi dodać kanał /ai).",
-    "languageName": "Polish"
+    "languageName": "Polish",
+    "notConfigured": "Nie skonfigurowano"
 }

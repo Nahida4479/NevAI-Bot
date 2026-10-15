@@ -7,6 +7,7 @@ import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
 import { infographicTool, infographicToolOpenAI, runInfographicTool } from './generate_images/tool.js';
 import { callOllama, getOllamaModel } from './ollama/detect_ollama.js';
+import { DEFAULT_ORDER, MODELS } from '../providers_list.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -18,15 +19,16 @@ if (process.env.GROQ_API) {
 
 
 //Free AI Models
-const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
-const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['openai/gpt-6-luna'] 
-const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
-const openroute = ["openrouter/free"]
+const geminiModels = MODELS.gemini;
+const groqModels = MODELS.groq;
+const HackClubModels = MODELS.hackclub;
+const visionModel = MODELS.groqVision;
+const openroute = MODELS.openrouter;
 
 // Paid AI models
-const anthropic_claude = ["claude-haiku-5-5"] 
-const anthropic_image_model = 'claude-haiku-5-5'
+const anthropic_claude = MODELS.anthropic;
+const anthropic_image_model = MODELS.infographic;
+
 
 const claudeTools = tools?.map(t => ({
     name: t.function.name,
@@ -294,54 +296,14 @@ async function callGemini(messages) {
 }  
 
 async function getAiResponse(messages, options = {}) {
-
-    try {
-        const ollama_model = await getOllamaModel();
-        if (ollama_model) {
-            try {
-                return await callOllama(messages, ollama_model);
-            } catch (err) {
-                debug_log_err(`OLLAMA: Failed ${err}`)
-                debugging(err)
-            }
-        } 
-    } catch (err) {
-        debugging(err)
-    }
-
-    try {
-        return await callHackClub(messages, options);
-    } catch (err) {
-        const failed_hc = `HACKCLUB_API: Failed`
-        debug_log_err(failed_hc)
-    }
-
-    try {
-        return await callAnthropic_claude(messages, options);
-    } catch (err) {
-        const failed_anthropic = `ANTHROPIC_API: Failed`
-        debug_log_err(failed_anthropic);
-    }
-
-    try {
-        return await callGroq(messages, options);
-    } catch (err) {
-        const failed_q = `GROQ_API: Failed`
-        debug_log_err(failed_q)
-    }
-
-    try {
-        return await callOpenRouter(messages, options);
-    } catch (err) {
-        const failed_opr = `OPENROUTER_API: Failed`
-        debug_log_err(failed_opr)
-    }
-
-    try {
-        return await callGemini(messages);
-    } catch (err) {
-        const failed_ge = `GEMINI_API: Failed`
-        debug_log_err(failed_ge)
+    for (const id of resolveOrder(options.providerSettings)) {
+        const provider = PROVIDERS[id];
+        if (!(await provider.isAvailable())) continue;
+        try {
+            return await provider.call(messages, options);
+        } catch (err) {
+            debug_log_err(`${provider.label}: Failed ${err}`)
+        }
     }
 
     throw new Error(`All AI providers failed`);
@@ -357,4 +319,64 @@ async function getVisionAiResponse(messages) {
     throw new Error(`All VISION AI providers failed`)
 }
 
-export {getAiResponse, getVisionAiResponse, anthropic_image_model };
+function resolveOrder(settings) {
+    const saved = (settings?.order ?? []).filter(id => PROVIDERS[id]);
+    const disabled = new Set(settings?.disabled ?? []);
+    const order = [...saved, ...DEFAULT_ORDER.filter(id => !saved.includes(id))];
+    return order.filter(id => !disabled.has(id));
+}
+
+async function getProviderStatus(settings) {
+    const saved = (settings?.order ?? []).filter(id => PROVIDERS[id]);
+    const order = [...saved, ...DEFAULT_ORDER.filter(id => !saved.includes(id))];
+    const disabled = new Set[settings?.disabled ?? []];
+
+    return Promise.all(order.map(async id => ({
+        id,
+        label: PROVIDERS[id].label,
+        enabled: !disabled.has[id],
+        available: await PROVIDERS[id].isAvailable()
+    })));
+}
+
+const PROVIDERS = {
+    ollama: {
+        label: 'Ollama',
+        paid: false,
+        isAvailable: async () => !!(await getOllamaModel()),
+        call: async (messages) => callOllama(messages, await getOllamaModel())
+    },
+    hackclub: {
+        label: 'Hack Club',
+        paid: false,
+        isAvailable: async () => !!process.env.HACKCLUB_API?.trim(),
+        call: callHackClub
+    },
+    anthropic: {
+        label: 'Anthropic',
+        paid: true,
+        isAvailable: async () => !!process.env.ANTHROPIC_API?.trim(),
+        call: callAnthropic_claude
+    },
+    groq: {
+        label: 'Groq',
+        paid: false,
+        isAvailable: async () => !!process.env.GROQ_API?.trim(),
+        call: callGroq
+    },
+    openrouter: {
+        label: 'OpenRouter',
+        paid: false,
+        isAvailable: async () => !!process.env.OPENROUTER_API?.trim(),
+        call: callOpenRouter
+    },
+    gemini: {
+        label: 'Gemini',
+        paid: false,
+        isAvailable: async () => !!process.env.GEMINI_API?.trim(),
+        call: callGemini
+    }
+};
+
+
+export { getAiResponse, getVisionAiResponse, anthropic_image_model, getProviderStatus };

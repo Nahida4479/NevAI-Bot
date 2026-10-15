@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
-import { getAiResponse, getVisionAiResponse } from './src/models.js';
+import { Client, GatewayIntentBits, StringSelectMenuBuilder, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
+import { getAiResponse, getVisionAiResponse, getProviderStatus } from './src/models.js';
 import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
@@ -208,7 +208,7 @@ client.on('messageCreate', async (message) => {
         }
     } else {
         try {
-        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName })
+        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers })
         await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
@@ -271,6 +271,38 @@ client.on('messageCreate', async (message) => {
     
 })
 
+async function buildProvidersPanel(settings, selectedId = null) {
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+    const list = await getProviderStatus(settings);
+
+    const lines = list.map((p, i) => {
+        const status = p.enabled ? `${ getEmoji(client, 'success')}` : `${ getEmoji(client, 'error')}`;
+        const warning = p.available ? '' : ' ⚠️ *``*';
+        const arrow = p.id === selectedId ? ' ◀' : '';
+        return `${i + 1}. ${status} **${p.label}**${warning}${arrow}`;
+    });
+
+    const embed = new EmbedBuilder()
+        .setTitle('AI providers')
+        .setDescription(lines.join('\n'))
+        .setColor(0xD65940);
+
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId('prov_select')
+        .setPlaceholder('Choose a provider')
+        .addOptions(list.map(p => ({ label: p.label, value: p.id, default: p.id === selectedId })));
+
+    const id = selectedId ?? 'none';
+    const buttons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`prov_up:${id}`).setLabel('⬆️ Up').setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_down:${id}`).setLabel('⬇️ Down').setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_toggle:${id}`).setLabel('🔁 On / Off').setStyle(ButtonStyle.Primary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId('prov_reset:none').setLabel('↩️ Reset').setStyle(ButtonStyle.Danger)
+    );
+
+    return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu), buttons] };
+}
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
@@ -351,13 +383,14 @@ if (interaction.commandName === 'language') {
 
 
 if (interaction.commandName === 'ai_settings') {
+    const data = loadData()
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
     if (!interaction.memberPermissions.has('Administrator')) {
         await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.onlyOwner}`, flags: MessageFlags.Ephemeral});
         return;
     }
-    const data = loadData()
-    const langCode = data[interaction.guildId]?.language || 'EN';
-    const lang = loadLanguage(langCode);
 
     const embed = new EmbedBuilder()
         .setAuthor({ name: 'NevAI', iconURL: 'https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png' })
