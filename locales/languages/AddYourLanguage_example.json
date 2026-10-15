@@ -39,6 +39,10 @@
     "down_button": "",
     "on_off_button": "",
     "reset_button": "",
-    "providerNotConfigured": ""
+    "providerNotConfigured": "",
+    "toolSearch": "",
+    "toolInfographic": "",
+    "toolNotConfigured": "",
+    "toolRequiresSearch": ""
 
 }

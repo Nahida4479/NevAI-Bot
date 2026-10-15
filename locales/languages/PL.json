@@ -39,5 +39,9 @@
     "down_button": "Niżej",
     "on_off_button": "Włącz/Wyłącz dostawcę",
     "reset_button": "Przywróć domyślną kolejność",
-    "providerNotConfigured": "Klucz API dostawcy nie został dodany do pliku `.env` bądź nie wykryto Ollamy."
+    "providerNotConfigured": "Klucz API dostawcy nie został dodany do pliku `.env` bądź nie wykryto Ollamy.",
+    "toolSearch": "Wyszukiwanie (Exa)",
+    "toolInfographic": "Tworzenie infografik (Claude)",
+    "toolNotConfigured": "To narzędzie nie jest skonfigurowane. Dodaj wymagany klucz API do pliku `.env`.",
+    "toolRequiresSearch": "Tworzenie infografik wymaga włączonego wyszukiwania (Exa)."
 }

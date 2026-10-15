@@ -39,6 +39,11 @@
     "down_button": "Down",
     "on_off_button": "On/Off provider",
     "reset_button": "Reset to default",
-    "providerNotConfigured": "The provider API key has not been added to the `.env` file, or Ollama has not been detected."
+    "providerNotConfigured": "The provider API key has not been added to the `.env` file, or Ollama has not been detected.",
+    "toolSearch": "Web search (Exa)",
+    "toolInfographic": "Create infographics (Claude)",
+    "toolNotConfigured": "This tool is not configured. Add the required API key to the `.env` file.",
+    "toolRequiresSearch": "Infographics require web search (Exa) to be enabled."
+
 
 }

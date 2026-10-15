@@ -208,7 +208,7 @@ client.on('messageCreate', async (message) => {
         }
     } else {
         try {
-        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers, disabledTools: guildData.tools?.disabled ?? [] })
+        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers, disabledTools: getDisabledTools(guildData.tools) ?? [] })
         await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
@@ -280,9 +280,22 @@ function moveProvider(order, id, direction) {
 }
 
 const TOOL_BUTTONS = [
-    { name: 'search_web', labelKey: 'toolSearch' },
-    { name: 'create_infographic', labelKey: 'toolInfographic' }
+    { name: 'search_web', labelKey: 'toolSearch', requires: ['EXA_API'] },
+        { name: 'create_infographic', labelKey: 'toolInfographic', requires: ['EXA_API', 'ANTHROPIC_API'], dependsOn: ['search_web'] }
 ];
+
+function isToolAvailable(tool) {
+    return tool.requires.every(key => process.env[key]?.trim());
+}
+
+function getDisabledTools(toolSettings) {
+    const disabled = new Set(toolSettings?.disabled ?? []);
+    for (const t of TOOL_BUTTONS) {
+        const blocked = (t.dependsOn ?? []).some(dep => disabled.has(dep));
+        if (!isToolAvailable(t) || blocked) disabled.add(t.name);
+    }
+    return [...disabled];
+}
 
 async function buildProvidersPanel(settings, lang, selectedId = null, toolSettings = undefined) {
     const list = await getProviderStatus(settings);
@@ -312,14 +325,20 @@ async function buildProvidersPanel(settings, lang, selectedId = null, toolSettin
         new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger)
     );
 
-    const disabledTools = toolSettings?.disabled ?? [];
+    const disabledTools = getDisabledTools(toolSettings);
     const toolRow = new ActionRowBuilder().addComponents(
         TOOL_BUTTONS.map(t => {
+            const available = isToolAvailable(t);
             const enabled = !disabledTools.includes(t.name);
+
+            let style = ButtonStyle.Secondary;
+            if (!available) style = ButtonStyle.Danger;
+            else if (enabled) style = ButtonStyle.Success;
+
             return new ButtonBuilder()
                 .setCustomId(`tool_toggle:${t.name}`)
                 .setLabel(`${enabled ? '✅' : '❌'} ${lang[t.labelKey]}`)
-                .setStyle(enabled ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setStyle(style)
         })
     )
 
@@ -545,9 +564,19 @@ if (interaction.isButton() && interaction.customId.startsWith('tool_toggle:')) {
     const toolName = interaction.customId.split(':')[1];
     const data = loadData();
     const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+    const tool = TOOL_BUTTONS.find(t => t.name === toolName);
+    if (!tool || !isToolAvailable(tool)) {
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.toolNotConfigured}`, flags: MessageFlags.Ephemeral });
+        return;
+    }
     data[interaction.guildId] ??= {};
     const guild = data[interaction.guildId];
 
+    const blockedBy = (tool.dependsOn ?? []).filter(dep => guild.tools?.disabled?.includes(dep));
+    if (blockedBy.length > 0) {
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.toolRequiresSearch}`, flags: MessageFlags.Ephemeral });
+        return;
+    }
     guild.tools ??= { disabled: [] };
     const list = guild.tools.disabled;
     if (list.includes(toolName)) {
