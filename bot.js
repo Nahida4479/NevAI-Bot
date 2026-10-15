@@ -9,6 +9,7 @@ import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 import { sendLogEmbed } from './src/logs_command.js';
 import { startStatusServer } from './src/NevAI_status.js';
+import { detectGenerateImageProvider } from './src/generate_images/openrouter_gemini_generate_images/generate_image.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
@@ -30,6 +31,12 @@ if (!process.env.DISCORD_API) {
     console.log(styleText(['magenta', 'bold'], `Node version:${n_verson} System:${p_version}`))
     const pkg_read = JSON.parse(readFileSync('./package.json', 'utf-8'));
     debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
+}
+
+if (process.env.GENERATE_IMAGE_API && !detectGenerateImageProvider()) {
+    debug_log_err('GENERATE_IMAGE_API: unsupported key. Use an OpenRouter or Google AI Studio key.')
+} else if (!process.env.GENERATE_IMAGE_API) {
+    debug_log_warn('GENERATE_IMAGE_API not detected - image generation is not available.')
 }
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API && !detectedOllama ) {
