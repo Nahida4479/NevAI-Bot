@@ -215,6 +215,7 @@ client.on('messageCreate', async (message) => {
             debug_log_err(err_vision);
             debugging(err)
             await message.reactions.removeAll();
+            const errorText = err.message === 'NO_PROVIDERS_ENABLED' ? lang.allProvidersDisabled : lang.aiResponseError;
             await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
             await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
                 { name: 'User message', value: message.content || `${lang.noMessageContent}` },

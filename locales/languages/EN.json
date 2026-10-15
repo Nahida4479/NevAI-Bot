@@ -33,7 +33,8 @@
     "languageName": "English",
     "notConfigured": "Not configured",
     "ChooseProvider": "Choose a provider",
-    "AiProviders": "Ai providers"
+    "AiProviders": "Ai providers",
+    "allProvidersDisabled": "All AI providers are disabled. An administrator can enable them in `/ai_settings`."
 
 
 

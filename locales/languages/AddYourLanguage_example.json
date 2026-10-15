@@ -30,6 +30,10 @@
     "commands_help": "",
     "HowToUse": "",
     "HowToUse_answer": "",
-    "languageName": ""
+    "languageName": "",
+    "notConfigured": "",
+    "ChooseProvider": "",
+    "AiProviders": "",
+    "allProvidersDisabled": ""
 
 }
