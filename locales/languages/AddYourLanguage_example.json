@@ -34,6 +34,10 @@
     "notConfigured": "",
     "ChooseProvider": "",
     "AiProviders": "",
-    "allProvidersDisabled": ""
+    "allProvidersDisabled": "",
+    "up_button"
+    down_button
+    on_off_button
+    reset_button
 
 }

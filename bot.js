@@ -301,10 +301,10 @@ async function buildProvidersPanel(settings, lang, selectedId = null) {
 
     const id = selectedId ?? 'none';
     const buttons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`prov_up:${id}`).setLabel('⬆️ Up').setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
-        new ButtonBuilder().setCustomId(`prov_down:${id}`).setLabel('⬇️ Down').setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
-        new ButtonBuilder().setCustomId(`prov_toggle:${id}`).setLabel('🔁 On / Off').setStyle(ButtonStyle.Primary).setDisabled(!selectedId),
-        new ButtonBuilder().setCustomId('prov_reset:none').setLabel('↩️ Reset').setStyle(ButtonStyle.Danger)
+        new ButtonBuilder().setCustomId(`prov_up:${id}`).setLabel(`⬆️ ${lang.up_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_down:${id}`).setLabel(`⬇️ ${lang.down_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_toggle:${id}`).setLabel(`🔁 ${lang.on_off_button}`).setStyle(ButtonStyle.Primary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger)
     );
 
     return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu), buttons] };
