@@ -1,3 +1,4 @@
+import { MODELS } from "../../../providers_list.js";
 import { generateViaGoogleApi } from "./generate_gemini.js";
 import { generateViaOpenRouter } from "./generate_openrouter.js";
 
@@ -8,6 +9,21 @@ function detectGenerateImageProvider() {
     if (image_provider_api.startsWith('sk-or-')) return 'openrouter';
     if (image_provider_api.startsWith('AIza')) return 'google';
     return null
+}
+
+function isImageGenerationAvailable() {
+    const provider = detectGenerateImageProvider();
+    return !!provider && !!MODELS.image?.[provider]
+}
+
+async function GenerateImage(prompt, images = []) {
+    const provider = detectGenerateImageProvider();
+    const model = MODELS.image?.[provider]
+    if (!provider || !model) throw new Error('Image generation is not configured');
+
+    if (provider === 'openrouter') return generateViaOpenRouter(prompt, images, model)
+    if (provider === 'google') return generateViaGoogleApi(prompt, images, model);
+    throw new Error(`Unsupported image provider: ${provider}`)
 }
 
 
