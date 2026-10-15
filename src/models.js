@@ -36,10 +36,14 @@ const claudeTools = tools?.map(t => ({
     input_schema: t.function.parameters
 }))
 
-const openAITools = [...(tools ?? [])];
-if (process.env.EXA_API && process.env.ANTHROPIC_API) openAITools.push(infographicToolOpenAI);
+function getOpenAITools(disabledTools = []) {
+    const list = [...(tools ?? [])];
+    if (process.env.EXA_API && process.env.ANTHROPIC_API) list.push(infographicToolOpenAI);
+    return list.filter(t => !disabledTools.includes(t.function.name));
+}
 
 async function executeTool(name, input, ctx) {
+    if (ctx.disabledTools.includes(name)) return 'This tool is disabled on this server.';
     if (name === 'search_web') {
         const query = input.query || '';
         if (!query) return 'Missing query';
@@ -61,12 +65,13 @@ async function executeTool(name, input, ctx) {
 
 
 function newCtx(userId, language) {
-    return { userId, language, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
+    return { userId, language, disabledTools, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
 }
 
 function toolOptions(lastRound) {
-    if (!openAITools.length) return {};
-    return { tools: openAITools, tool_choice: lastRound ? 'none' : 'auto' };
+    const list = getOpenAITools(ctx.disabledTools)
+    if (!list.length) return {};
+    return { tools: list, tool_choice: lastRound ? 'none' : 'auto' };
 }
 
 async function runToolLoop(sendRequest, messages, ctx) {
@@ -124,11 +129,16 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
             const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
             const allTools = [...(claudeTools ?? [])];
             if (process.env.EXA_API) allTools.push(infographicTool);
+            const enabledTools = allTools.filter(t => !disabledTools.includes(t.name));
 
             const conversation = [...chat];
             let response;
 
             for (let round = 0; round < 3; round++) {
+                if (disabledTools.includes(toolUse.name)) {
+                    toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'This tool is disabled on this server.' });
+                    continue;
+                }
                 const lastRound = round === 2;
                 response = await client.messages.create({
                     max_tokens: 2500,
@@ -185,15 +195,15 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
     throw new Error("All Anthropic API models failed")
 }
 
-async function callHackClub(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callHackClub(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
     for (const model of HackClubModels) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${process.env.HACKCLUB_API}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, ctx) })
                 });
                 return res.json();
             }, messages, ctx);
@@ -207,15 +217,15 @@ async function callHackClub(messages, { userId = 'unknown', language = 'English'
     throw new Error(`All HackClub API models failed`)
 }
 
-async function callOpenRouter(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callOpenRouter(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
     for (const model of openroute) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools);
         try {
             const { data, message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${process.env.OPENROUTER_API}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, disabledTools) })
                 });
                 return res.json();
             }, messages, ctx);
@@ -229,13 +239,13 @@ async function callOpenRouter(messages, { userId = 'unknown', language = 'Englis
     throw new Error(`All OpenRouter models failed`)
 }
 
-async function callGroq(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callGroq(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
     for (const model of groqModels) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 try {
-                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound) });
+                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound, disabledTools) });
                 } catch (err) {
                     if (lastRound && String(err.message).includes('tool_use_failed')) {
                         debug_log_warn('Groq ignored tool_choice: none, retrying without tools');

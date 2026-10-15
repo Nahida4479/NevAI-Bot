@@ -208,7 +208,7 @@ client.on('messageCreate', async (message) => {
         }
     } else {
         try {
-        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers })
+        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers, disabledTools: guildData.tools?.disabled ?? [] })
         await message.reactions.removeAll();
         } catch (err) {
             const err_vision = `ALL AI models error: ${err}`
@@ -216,7 +216,7 @@ client.on('messageCreate', async (message) => {
             debugging(err)
             await message.reactions.removeAll();
             const errorText = err.message === 'NO_PROVIDERS_ENABLED' ? lang.allProvidersDisabled : lang.aiResponseError;
-            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
+            await message.reply({ content: `${getEmoji(client, 'error')} ${errorText}` });
             await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
                 { name: 'User message', value: message.content || `${lang.noMessageContent}` },
                 { name: 'Error type', value: 'AI models failed' },
@@ -279,7 +279,12 @@ function moveProvider(order, id, direction) {
     [order[i], order[j]] = [order[j], order[i]];
 }
 
-async function buildProvidersPanel(settings, lang, selectedId = null) {
+const TOOL_BUTTONS = [
+    { name: 'search_web', labelKey: 'toolSearch' },
+    { name: 'create_infographic', labelKey: 'toolInfographic' }
+];
+
+async function buildProvidersPanel(settings, lang, selectedId = null, toolSettings = undefined) {
     const list = await getProviderStatus(settings);
 
     const lines = list.map((p, i) => {
@@ -307,7 +312,18 @@ async function buildProvidersPanel(settings, lang, selectedId = null) {
         new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger)
     );
 
-    return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu), buttons] };
+    const disabledTools = toolSettings?.disabled ?? [];
+    const toolRow = new ActionRowBuilder().addComponents(
+        TOOL_BUTTONS.map(t => {
+            const enabled = !disabledTools.includes(t.name);
+            return new ButtonBuilder()
+                .setCustomId(`tool_toggle:${t.name}`)
+                .setLabel(`${enabled ? '✅' : '❌'} ${lang[t.labelKey]}`)
+                .setStyle(enabled ? ButtonStyle.Success : ButtonStyle.Secondary)
+        })
+    )
+
+    return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu), buttons, toolRow] };
 }
 
 client.on('interactionCreate', async (interaction) => {
@@ -479,7 +495,7 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'prov_select') 
     const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
 
     const selected = interaction.values[0];
-    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, selected);
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, selected, data[interaction.guildId]?.tools);
     await interaction.update(panel);
 }
 
@@ -494,7 +510,7 @@ if (interaction.isButton() && interaction.customId.startsWith('prov_')) {
     if (action === 'prov_reset') {
         delete guild.providers;
         saveData(data);
-        await interaction.update(await buildProvidersPanel(undefined, lang));
+        await interaction.update(await buildProvidersPanel(undefined, lang, null, guild.tools));
         return;
     }
 
@@ -522,7 +538,26 @@ if (interaction.isButton() && interaction.customId.startsWith('prov_')) {
     debugging(`Saving providers: ${JSON.stringify({ order, disabled })}`);
     guild.providers = { order, disabled };
     saveData(data);
-    await interaction.update(await buildProvidersPanel(guild.providers, lang, id));
+    await interaction.update(await buildProvidersPanel(guild.providers, lang, id, guild.tools));
+}
+
+if (interaction.isButton() && interaction.customId.startsWith('tool_toggle:')) {
+    const toolName = interaction.customId.split(':')[1];
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+    data[interaction.guildId] ??= {};
+    const guild = data[interaction.guildId];
+
+    guild.tools ??= { disabled: [] };
+    const list = guild.tools.disabled;
+    if (list.includes(toolName)) {
+        list.splice(list.indexOf(toolName), 1);
+    } else {
+        list.push(toolName);
+    }
+
+    saveData(data);
+    await interaction.update(await buildProvidersPanel(guild.providers, lang, null, guild.tools));
 }
 
 if (interaction.isButton() && interaction.customId === 'providers_button') {
@@ -530,7 +565,7 @@ if (interaction.isButton() && interaction.customId === 'providers_button') {
     const langCode = data[interaction.guildId]?.language || 'EN';
     const lang = loadLanguage(langCode);
 
-    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang);
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, null, data[interaction.guildId]?.tools);
     await interaction.reply({ ...panel, flags: MessageFlags.Ephemeral });
 }
 

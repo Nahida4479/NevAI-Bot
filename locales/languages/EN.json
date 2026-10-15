@@ -41,7 +41,4 @@
     "reset_button": "Reset to default",
     "providerNotConfigured": "The provider API key has not been added to the `.env` file, or Ollama has not been detected."
 
-
-
-
 }
