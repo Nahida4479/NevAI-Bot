@@ -140,9 +140,9 @@ For example, if you are currently using the `Hack Club provider`, its model (as 
 
 #### At least one of the listed AI providers:
 
- [Groq API](https://console.groq.com/keys) **|**
- [Gemini API](https://aistudio.google.com/api-keys) **|**
- [HackClub API](https://ai.hackclub.com/keys) **|**
+ [Groq](https://console.groq.com/keys) **|**
+ [Gemini](https://aistudio.google.com/api-keys) **|**
+ [HackClub](https://ai.hackclub.com/keys) **|**
  [OpenRouter](https://openrouter.ai) **|**
  [Anthropic](https://platform.claude.com) **|**
  [Ollama](https://ollama.com) (Ollama running locally, no API key needed)
