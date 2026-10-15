@@ -33,11 +33,11 @@
     "languageName": "Polish",
     "notConfigured": "Nie skonfigurowano",
     "ChooseProvider": "Wybierz dostawcę usług AI",
-    "AiProviders": "Dostawca usług AI",
+    "AiProviders": "Zarządzaj dostawcami AI",
     "allProvidersDisabled": "Wszyscy dostawcy AI są wyłączeni. Administrator może ich włączyć w `/ai_settings`.",
     "up_button": "Wyżej",
     "down_button": "Niżej",
     "on_off_button": "Włącz/Wyłącz dostawcę",
-    "reset_button": "Przywróć domyślną kolejność"
-
+    "reset_button": "Przywróć domyślną kolejność",
+    "providerNotConfigured": "Klucz API dostawcy nie został dodany do pliku `.env` bądź nie wykryto Ollamy."
 }

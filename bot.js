@@ -283,7 +283,7 @@ async function buildProvidersPanel(settings, lang, selectedId = null) {
     const list = await getProviderStatus(settings);
 
     const lines = list.map((p, i) => {
-        const status = p.enabled ? `${ getEmoji(client, 'success')}` : `${ getEmoji(client, 'error')}`;
+        const status = p.enabled && p.available ? `${ getEmoji(client, 'success')}` : `${ getEmoji(client, 'error')}`;
         const warning = p.available ? '' : ` ⚠️ *${lang.notConfigured}*`;
         const arrow = p.id === selectedId ? ' ◀' : '';
         return `${i + 1}. ${status} **${p.label}**${warning}${arrow}`;
@@ -506,6 +506,12 @@ if (interaction.isButton() && interaction.customId.startsWith('prov_')) {
     if (action === 'prov_down') moveProvider(order, id, +1);
 
     if (action === 'prov_toggle') {
+        const target = list.find(p => p.id === id);
+        if (!target?.available) {
+            await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.providerNotConfigured}`, flags: MessageFlags.Ephemeral })
+            return;
+        }
+
         if (disabled.includes(id)) {
             disabled.splice(disabled.indexOf(id), 1);
         } else {

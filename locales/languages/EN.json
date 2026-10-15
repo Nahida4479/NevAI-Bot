@@ -33,12 +33,14 @@
     "languageName": "English",
     "notConfigured": "Not configured",
     "ChooseProvider": "Choose a provider",
-    "AiProviders": "Ai providers",
+    "AiProviders": "Manage AI providers",
     "allProvidersDisabled": "All AI providers are disabled. An administrator can enable them in `/ai_settings`.",
     "up_button": "Up",
     "down_button": "Down",
     "on_off_button": "On/Off provider",
-    "reset_button": "Reset to default"
+    "reset_button": "Reset to default",
+    "providerNotConfigured": "The provider API key has not been added to the `.env` file, or Ollama has not been detected."
+
 
 
 
