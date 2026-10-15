@@ -31,5 +31,8 @@
     "HowToUse": "Jak korzystać z bota?",
     "HowToUse_answer": "Oznacz bota na kanale AI i zadaj pytanie (Administrator serwera musi dodać kanał /ai).",
     "languageName": "Polish",
-    "notConfigured": "Nie skonfigurowano"
+    "notConfigured": "Nie skonfigurowano",
+    "ChooseProvider": "Wybierz dostawcę usług AI",
+    "AiProviders": "Dostawca usług AI"
+
 }

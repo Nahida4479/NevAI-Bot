@@ -296,6 +296,8 @@ async function callGemini(messages) {
 }  
 
 async function getAiResponse(messages, options = {}) {
+    const order = resolveOrder(options.providerSettings);
+    if (order.length === 0) throw new Error('NO_PROVIDERS_ENABLED')
     for (const id of resolveOrder(options.providerSettings)) {
         const provider = PROVIDERS[id];
         if (!(await provider.isAvailable())) continue;
@@ -329,12 +331,12 @@ function resolveOrder(settings) {
 async function getProviderStatus(settings) {
     const saved = (settings?.order ?? []).filter(id => PROVIDERS[id]);
     const order = [...saved, ...DEFAULT_ORDER.filter(id => !saved.includes(id))];
-    const disabled = new Set[settings?.disabled ?? []];
+    const disabled = new Set(settings?.disabled ?? []);
 
     return Promise.all(order.map(async id => ({
         id,
         label: PROVIDERS[id].label,
-        enabled: !disabled.has[id],
+        enabled: !disabled.has(id),
         available: await PROVIDERS[id].isAvailable()
     })));
 }

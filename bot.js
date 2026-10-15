@@ -271,26 +271,31 @@ client.on('messageCreate', async (message) => {
     
 })
 
-async function buildProvidersPanel(settings, selectedId = null) {
-    const langCode = data[interaction.guildId]?.language || 'EN';
-    const lang = loadLanguage(langCode);
+function moveProvider(order, id, direction) {
+     const i = order.indexOf(id);
+    const j = i + direction;
+    if (i === -1 || j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+}
+
+async function buildProvidersPanel(settings, lang, selectedId = null) {
     const list = await getProviderStatus(settings);
 
     const lines = list.map((p, i) => {
         const status = p.enabled ? `${ getEmoji(client, 'success')}` : `${ getEmoji(client, 'error')}`;
-        const warning = p.available ? '' : ' ⚠️ *``*';
+        const warning = p.available ? '' : ` ⚠️ *${lang.notConfigured}*`;
         const arrow = p.id === selectedId ? ' ◀' : '';
         return `${i + 1}. ${status} **${p.label}**${warning}${arrow}`;
     });
 
     const embed = new EmbedBuilder()
-        .setTitle('AI providers')
+        .setTitle(`${lang.AiProviders}`)
         .setDescription(lines.join('\n'))
         .setColor(0xD65940);
 
     const menu = new StringSelectMenuBuilder()
         .setCustomId('prov_select')
-        .setPlaceholder('Choose a provider')
+        .setPlaceholder(`${lang.ChooseProvider}`)
         .addOptions(list.map(p => ({ label: p.label, value: p.id, default: p.id === selectedId })));
 
     const id = selectedId ?? 'none';
@@ -411,10 +416,16 @@ if (interaction.commandName === 'ai_settings') {
         .setLabel(lang.AddEmoji)
         .setStyle(ButtonStyle.Danger)
 
+    const providers_button = new ButtonBuilder()
+    .setCustomId('providers_button')
+    .setLabel(lang.AiProviders)
+    .setStyle(ButtonStyle.Danger);
+
+    const row_providers = new ActionRowBuilder().addComponents(providers_button);
     const row = new ActionRowBuilder().addComponents(button);
     const row_emoji = new ActionRowBuilder().addComponents(emoji_button);
     
-    await interaction.reply({ embeds: [embed], components: [row, row_emoji], flags: MessageFlags.Ephemeral})
+    await interaction.reply({ embeds: [embed], components: [row, row_emoji, row_providers], flags: MessageFlags.Ephemeral})
     }
 }
 
@@ -460,6 +471,60 @@ if (interaction.isButton() && interaction.customId === 'open_prompt') {
     modal.addComponents(modalRow)
 
     await interaction.showModal(modal);
+}
+
+if (interaction.isStringSelectMenu() && interaction.customId === 'prov_select') {
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+
+    const selected = interaction.values[0];
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, selected);
+    await interaction.update(panel);
+}
+
+if (interaction.isButton() && interaction.customId.startsWith('prov_')) {
+    const [action, id] = interaction.customId.split(':');
+    debugging(`Provider button: action=${action}, id=${id}`)
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+    data[interaction.guildId] ??= {};
+    const guild = data[interaction.guildId];
+
+    if (action === 'prov_reset') {
+        delete guild.providers;
+        saveData(data);
+        await interaction.update(await buildProvidersPanel(undefined, lang));
+        return;
+    }
+
+    const list = await getProviderStatus(guild.providers);
+    const order = list.map(p => p.id);
+    const disabled = list.filter(p => !p.enabled).map(p => p.id);
+
+    if (action === 'prov_up') moveProvider(order, id, -1);
+    if (action === 'prov_down') moveProvider(order, id, +1);
+
+    if (action === 'prov_toggle') {
+        if (disabled.includes(id)) {
+            disabled.splice(disabled.indexOf(id), 1);
+        } else {
+            disabled.push(id);
+        }
+    }
+
+    debugging(`Saving providers: ${JSON.stringify({ order, disabled })}`);
+    guild.providers = { order, disabled };
+    saveData(data);
+    await interaction.update(await buildProvidersPanel(guild.providers, lang, id));
+}
+
+if (interaction.isButton() && interaction.customId === 'providers_button') {
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang);
+    await interaction.reply({ ...panel, flags: MessageFlags.Ephemeral });
 }
 
 

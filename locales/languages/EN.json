@@ -30,5 +30,11 @@
     "commands_help": "Bot Administrator Commands",
     "HowToUse": "How to use?",
     "HowToUse_answer": "Mention the bot in the AI channel and ask your question (The server administrator must add the /ai channel).",
-    "languageName": "English"
+    "languageName": "English",
+    "notConfigured": "Not configured",
+    "ChooseProvider": "Choose a provider",
+    "AiProviders": "Ai providers"
+
+
+
 }
