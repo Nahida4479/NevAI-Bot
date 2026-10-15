@@ -64,11 +64,11 @@ async function executeTool(name, input, ctx) {
 }
 
 
-function newCtx(userId, language) {
+function newCtx(userId, language, disabledTools = []) {
     return { userId, language, disabledTools, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
 }
 
-function toolOptions(lastRound) {
+function toolOptions(lastRound, ctx) {
     const list = getOpenAITools(ctx.disabledTools)
     if (!list.length) return {};
     return { tools: list, tool_choice: lastRound ? 'none' : 'auto' };
@@ -114,7 +114,7 @@ function buildResult(content, model, ctx) {
     };
 }
 
-async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
     for (const model of anthropic_claude) {
         let inputTokens = 0;
         let outputTokens = 0;
@@ -135,16 +135,12 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
             let response;
 
             for (let round = 0; round < 3; round++) {
-                if (disabledTools.includes(toolUse.name)) {
-                    toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'This tool is disabled on this server.' });
-                    continue;
-                }
                 const lastRound = round === 2;
                 response = await client.messages.create({
                     max_tokens: 2500,
                     system,
                     model,
-                    tools: allTools,
+                    tools: enabledTools,
                     tool_choice: lastRound ? { type: 'none' } : { type: 'auto' },
                     messages: conversation
                 });
@@ -157,6 +153,10 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
                 const toolResults = [];
 
                 for (const toolUse of toolUses) {
+                    if (disabledTools.includes(toolUse.name)) {
+                        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'This tool is disabled on this server.' });
+                        continue;
+                    }
                     if (toolUse.name === 'search_web') {
                         usedInternetSearch = true;
                         const query = toolUse.input.query || '';
@@ -225,7 +225,7 @@ async function callOpenRouter(messages, { userId = 'unknown', language = 'Englis
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${process.env.OPENROUTER_API}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, disabledTools) })
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, ctx) })
                 });
                 return res.json();
             }, messages, ctx);
@@ -245,7 +245,7 @@ async function callGroq(messages, { userId = 'unknown', language = 'English', di
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 try {
-                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound, disabledTools) });
+                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound, ctx) });
                 } catch (err) {
                     if (lastRound && String(err.message).includes('tool_use_failed')) {
                         debug_log_warn('Groq ignored tool_choice: none, retrying without tools');
@@ -308,7 +308,7 @@ async function callGemini(messages) {
 async function getAiResponse(messages, options = {}) {
     const order = resolveOrder(options.providerSettings);
     if (order.length === 0) throw new Error('NO_PROVIDERS_ENABLED')
-    for (const id of resolveOrder(options.providerSettings)) {
+    for (const id of order) {
         const provider = PROVIDERS[id];
         if (!(await provider.isAvailable())) continue;
         try {
