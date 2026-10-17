@@ -33,6 +33,7 @@
 - Generate infographic (only Anthropic models).
 - Running local models using Ollama.
 - Generate and edits images.
+- Manage AI providers and tools from `/ai_settings`
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -102,7 +103,7 @@ Ollama is detected automatically. Make sure it is running and has at least one c
 
 The model decides for itself whether it wants to use Exa.ai. When the model uses Exa.ai, information from the internet is returned. The model uses this information to respond in the Discord chat. When the model decides it doesn’t need to use Exa.ai, it won’t. If you don’t add an EXA_API token, the bot will continue to function, but it will not search for information on the web. Exa returns images too.
 
-## How infographic generation works (Required Anthropic model and Exa.ai)
+## How infographic generation works (Required Anthropic Api and Exa.ai)
 
 
 ```mermaid
@@ -144,7 +145,8 @@ image: {
 },
 ```
 
-> **Warning:** image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
+> [!WARNING] 
+> Image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
 
 # Administrator commands
 
@@ -158,9 +160,9 @@ image: {
 
 ## Manage AI providers (using /ai_settings)
 
-Managing AI providers lets you set which provider answers first by changing the order in the list. You can also enable or disable each provider. If a provider's token has not been added to `.env`, the **⚠️ Not configured** label is shown. In the AI provider settings you can also enable or disable [web search with Exa](#models-web-search-exaai), [infographic generation](#how-infographic-generation-works-required-anthropic-model-and-exaai) (which uses Exa and Claude models), and [image generation or editing](#image-generation-openrouter-or-google-gemini-paid) with Gemini models.
+Managing AI providers lets you set which provider answers first by changing the order in the list. You can also enable or disable each provider. If a provider's API has not been added to `.env`, the **⚠️ Not configured** label is shown. In the AI provider settings you can also enable or disable [web search with Exa](#models-web-search-exaai), [infographic generation](#how-infographic-generation-works-required-anthropic-model-and-exaai) (which uses Exa and Claude models), and [image generation or editing](#image-generation-openrouter-or-google-gemini-paid) with Gemini models.
 
-![Manage AI providers](./public/ai_providers_manage.png)
+![Ai_Providers](./public/2_ai_providers_manage.png)
 
 # Requirements
 
