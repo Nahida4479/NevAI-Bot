@@ -30,8 +30,9 @@
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
-- Generate infographic (only Anthropic models)
-- Running local models using Ollama
+- Generate infographic (only Anthropic models).
+- Running local models using Ollama.
+- Generate and edits images.
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -65,15 +66,6 @@ openai/gpt-6-luna
 Free models (openrouter/free)
 ```
 
----
-
-## Models for vision (free)
-
-**Groq**
-```yaml
-qwen/qwen3.6-27b 
-qwen/qwen3.8-27b
-```
 > [!WARNING]
 > The model list may change at any time. Free models can be renamed, limited or removed by their providers.
 
@@ -83,6 +75,18 @@ qwen/qwen3.8-27b
 **Anthropic**
 ```yaml
 Claude Haiku 5.5
+```
+
+## Generate image AI (paid model)
+
+**OpenRouter**
+```yaml
+google/gemini-3.1-flash-lite-image
+```
+
+**Gemini**
+```yaml
+gemini-3.1-flash-lite-image
 ```
 
 ---
@@ -124,17 +128,39 @@ If both `ANTHROPIC_API` and `EXA_API` are set in `.env`, every provider __except
 
 For example, if you are currently using the `Hack Club provider`, its model (as long as it supports tools) can request an infographic. The bot then searches `Exa` for facts and images, and the `Anthropic model` picks the character portrait and draws the infographic. The finished image is attached to the **reply on Discord**, and the main model only receives a confirmation that the infographic was created, so it can add a short message.
 
+
+# Image generation (OpenRouter or Google Gemini, paid)
+
+The `generate_image` tool generates new images and edits images sent by the user. The request is sent to the model defined in `providers_list.js`. To use image generation, you need at least one of the following API keys set in `.env` under `GENERATE_IMAGE_API=`. The provider is detected automatically from the key you paste:
+
+- **OpenRouter** (key starts with `sk-or-`)
+- **Google Gemini** (key starts with `AIza`)
+
+The models used for each provider are defined in `providers_list.js`:
+```js
+image: {
+    openrouter: 'google/gemini-3.1-flash-lite-image', // Paid
+    google: 'gemini-3.1-flash-lite-image',            // Paid
+},
+```
+
+> **Warning:** image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
+
 # Administrator commands
 
 | **Commands** | **Description** |
 |---|---|
 | `/ai` | Set the channel where the AI will respond to mentions.|
-| `/ai_settings` | Open the settings panel to customize the AI prompt and reaction emoji. |
+| `/ai_settings` | Open the settings panel to customize the AI prompt, AI providers and reaction emoji. |
 | `/language` | Change the bot's response language. |
 | `/logs` | Set the channel where AI response logs will be sent. |
 | `/help` | List of commands in embed format |
 
+## Manage AI providers (using /ai_settings)
 
+Managing AI providers lets you set which provider answers first by changing the order in the list. You can also enable or disable each provider. If a provider's token has not been added to `.env`, the **⚠️ Not configured** label is shown. In the AI provider settings you can also enable or disable [web search with Exa](#models-web-search-exaai), [infographic generation](#how-infographic-generation-works-required-anthropic-model-and-exaai) (which uses Exa and Claude models), and [image generation or editing](#image-generation-openrouter-or-google-gemini-paid) with Gemini models.
+
+![Manage AI providers](./public/ai_providers_manage.png)
 
 # Requirements
 

@@ -7,6 +7,8 @@ import { styleText } from 'node:util';
 import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_search_logic.js';
 import { infographicTool, infographicToolOpenAI, runInfographicTool } from './generate_images/tool.js';
 import { callOllama, getOllamaModel } from './ollama/detect_ollama.js';
+import { DEFAULT_ORDER, MODELS } from '../providers_list.js';
+import { GenerateImage, isImageGenerationAvailable,imageToolClaude, imageToolOpenAI } from './generate_images/openrouter_gemini_generate_images/generate_image.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -18,15 +20,15 @@ if (process.env.GROQ_API) {
 
 
 //Free AI Models
-const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
-const groqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
-const HackClubModels = ['openai/gpt-6-luna'] 
-const visionModel = ["qwen/qwen3.6-27b", "qwen/qwen3.8-27b"]
-const openroute = ["openrouter/free"]
+const geminiModels = MODELS.gemini;
+const groqModels = MODELS.groq;
+const HackClubModels = MODELS.hackclub;
+const openroute = MODELS.openrouter;
 
 // Paid AI models
-const anthropic_claude = ["claude-haiku-5-5"] 
-const anthropic_image_model = 'claude-haiku-5-5'
+const anthropic_claude = MODELS.anthropic;
+const anthropic_image_model = MODELS.infographic;
+
 
 const claudeTools = tools?.map(t => ({
     name: t.function.name,
@@ -34,10 +36,15 @@ const claudeTools = tools?.map(t => ({
     input_schema: t.function.parameters
 }))
 
-const openAITools = [...(tools ?? [])];
-if (process.env.EXA_API && process.env.ANTHROPIC_API) openAITools.push(infographicToolOpenAI);
+function getOpenAITools(disabledTools = []) {
+    const list = [...(tools ?? [])];
+    if (process.env.EXA_API && process.env.ANTHROPIC_API) list.push(infographicToolOpenAI);
+    if (isImageGenerationAvailable()) list.push(imageToolOpenAI);
+    return list.filter(t => !disabledTools.includes(t.function.name));
+}
 
 async function executeTool(name, input, ctx) {
+    if (ctx.disabledTools.includes(name)) return 'This tool is disabled on this server.';
     if (name === 'search_web') {
         const query = input.query || '';
         if (!query) return 'Missing query';
@@ -49,6 +56,17 @@ async function executeTool(name, input, ctx) {
         ctx.imageResult = imageResult;
         return formatSearchResult(searchResult);
     }
+
+    if (name === 'generate_image') {
+        try {
+            ctx.generatedImage = await GenerateImage(input.prompt || '', ctx.images);
+            return 'Image generated successfully and attached to the reply. Briefly describe it to the user.';
+        } catch (err) {
+            debug_log_err(`Image generation failed: ${err}`);
+            return 'Image generation failed. Tell the user to try again later.';
+        }
+    }
+
     if (name === 'create_infographic') {
         const result = await runInfographicTool(input, ctx.userId, ctx.language);
         if (result.png) ctx.infographicPng = result.png;
@@ -58,13 +76,14 @@ async function executeTool(name, input, ctx) {
 }
 
 
-function newCtx(userId, language) {
-    return { userId, language, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
+function newCtx(userId, language, disabledTools = [], images = []) {
+    return { userId, language, disabledTools, images, usedInternetSearch: false, imageResult: undefined, infographicPng: null, generatedImage: null };
 }
 
-function toolOptions(lastRound) {
-    if (!openAITools.length) return {};
-    return { tools: openAITools, tool_choice: lastRound ? 'none' : 'auto' };
+function toolOptions(lastRound, ctx) {
+    const list = getOpenAITools(ctx.disabledTools)
+    if (!list.length) return {};
+    return { tools: list, tool_choice: lastRound ? 'none' : 'auto' };
 }
 
 async function runToolLoop(sendRequest, messages, ctx) {
@@ -103,36 +122,51 @@ function buildResult(content, model, ctx) {
         model,
         usedInternetSearch: ctx.usedInternetSearch,
         imageResult: ctx.imageResult,
-        infographicPng: ctx.infographicPng
+        infographicPng: ctx.infographicPng,
+        generatedImage: ctx.generatedImage
     };
 }
 
-async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English' } = {}) {
+function toAnthropicContent(content) {
+    if (!Array.isArray(content)) return content;
+    return content.map(part => {
+        if (part.type !== 'image_url') return part;
+        const match = part.image_url.url.match(/^data:(.+?);base64,(.+)$/);
+        if (!match) return part;
+        return { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } };
+    });
+}
+
+async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of anthropic_claude) {
         let inputTokens = 0;
         let outputTokens = 0;
         const system = messages[0].content;
-        const chat = messages.slice(1);
+        const chat = messages.slice(1).map(m => ({ ...m, content: toAnthropicContent(m.content) }));
         while (chat.length && chat[0].role == "assistant") chat.shift();
         let searchedImageResult;
         let usedInternetSearch = false;
         let infographicPng = null;
+        let generatedImage = null;
 
         try {
             const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
             const allTools = [...(claudeTools ?? [])];
             if (process.env.EXA_API) allTools.push(infographicTool);
+            if (isImageGenerationAvailable()) allTools.push(imageToolClaude);
+            const enabledTools = allTools.filter(t => !disabledTools.includes(t.name));
 
             const conversation = [...chat];
             let response;
 
             for (let round = 0; round < 3; round++) {
                 const lastRound = round === 2;
+                debugging(`Anthropic tools: ${enabledTools.map(t => t.name).join(', ')}`);
                 response = await client.messages.create({
                     max_tokens: 2500,
                     system,
                     model,
-                    tools: allTools,
+                    tools: enabledTools,
                     tool_choice: lastRound ? { type: 'none' } : { type: 'auto' },
                     messages: conversation
                 });
@@ -145,6 +179,10 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
                 const toolResults = [];
 
                 for (const toolUse of toolUses) {
+                    if (disabledTools.includes(toolUse.name)) {
+                        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'This tool is disabled on this server.' });
+                        continue;
+                    }
                     if (toolUse.name === 'search_web') {
                         usedInternetSearch = true;
                         const query = toolUse.input.query || '';
@@ -164,6 +202,15 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
                         if (result.png) infographicPng = result.png;
                         toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: result.text });
 
+                    } else if (toolUse.name === 'generate_image') {
+                        try {
+                            generatedImage = await GenerateImage(toolUse.input.prompt || '', images);
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generated successfully and attached to the reply.' });
+                        } catch (err) {
+                            debug_log_err(`Image generation failed: ${err}`);
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generation failed.', is_error: true });
+                        }
+
                     } else {
                         toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Unknown tool', is_error: true });
                     }
@@ -175,7 +222,7 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
 
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
             console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['bgYellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
-            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult, infographicPng };
+            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult, infographicPng, generatedImage };
         } catch (err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
         }
@@ -183,15 +230,15 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
     throw new Error("All Anthropic API models failed")
 }
 
-async function callHackClub(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callHackClub(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of HackClubModels) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${process.env.HACKCLUB_API}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, ctx) })
                 });
                 return res.json();
             }, messages, ctx);
@@ -205,15 +252,15 @@ async function callHackClub(messages, { userId = 'unknown', language = 'English'
     throw new Error(`All HackClub API models failed`)
 }
 
-async function callOpenRouter(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callOpenRouter(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of openroute) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { data, message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${process.env.OPENROUTER_API}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound) })
+                    body: JSON.stringify({ model, messages: conversation, ...toolOptions(lastRound, ctx) })
                 });
                 return res.json();
             }, messages, ctx);
@@ -227,13 +274,13 @@ async function callOpenRouter(messages, { userId = 'unknown', language = 'Englis
     throw new Error(`All OpenRouter models failed`)
 }
 
-async function callGroq(messages, { userId = 'unknown', language = 'English' } = {}) {
+async function callGroq(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of groqModels) {
-        const ctx = newCtx(userId, language);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 try {
-                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound) });
+                    return await groq.chat.completions.create({ model, messages: conversation, ...toolOptions(lastRound, ctx) });
                 } catch (err) {
                     if (lastRound && String(err.message).includes('tool_use_failed')) {
                         debug_log_warn('Groq ignored tool_choice: none, retrying without tools');
@@ -253,20 +300,6 @@ async function callGroq(messages, { userId = 'unknown', language = 'English' } =
         }
     }
     throw new Error(`All Groq Api models failed`)
-}
-
-async function callGroqVisionModels(messages) {
-    for (const model of visionModel) {
-        try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
-            console.log(styleText(['greenBright', 'bold'], `GROQ_API_VISIONS_MODEL: ${model}`));
-            return { content: response.choices[0].message.content, model: model }
-        } catch (err) {
-            const logs_vi_groq = `GROQ_API_VISIONS_MODEL ${model} failed, ${err}`;
-            debug_log_err(logs_vi_groq)
-        }
-    }
-    throw new Error(`All Groq Api vision models failed`)
 }
 
 async function callGemini(messages) {
@@ -294,67 +327,78 @@ async function callGemini(messages) {
 }  
 
 async function getAiResponse(messages, options = {}) {
-
-    try {
-        const ollama_model = await getOllamaModel();
-        if (ollama_model) {
-            try {
-                return await callOllama(messages, ollama_model);
-            } catch (err) {
-                debug_log_err(`OLLAMA: Failed ${err}`)
-                debugging(err)
-            }
-        } 
-    } catch (err) {
-        debugging(err)
-    }
-
-    try {
-        return await callHackClub(messages, options);
-    } catch (err) {
-        const failed_hc = `HACKCLUB_API: Failed`
-        debug_log_err(failed_hc)
-    }
-
-    try {
-        return await callAnthropic_claude(messages, options);
-    } catch (err) {
-        const failed_anthropic = `ANTHROPIC_API: Failed`
-        debug_log_err(failed_anthropic);
-    }
-
-    try {
-        return await callGroq(messages, options);
-    } catch (err) {
-        const failed_q = `GROQ_API: Failed`
-        debug_log_err(failed_q)
-    }
-
-    try {
-        return await callOpenRouter(messages, options);
-    } catch (err) {
-        const failed_opr = `OPENROUTER_API: Failed`
-        debug_log_err(failed_opr)
-    }
-
-    try {
-        return await callGemini(messages);
-    } catch (err) {
-        const failed_ge = `GEMINI_API: Failed`
-        debug_log_err(failed_ge)
+    const order = resolveOrder(options.providerSettings);
+    if (order.length === 0) throw new Error('NO_PROVIDERS_ENABLED')
+    for (const id of order) {
+        const provider = PROVIDERS[id];
+        if (!(await provider.isAvailable())) continue;
+        try {
+            return await provider.call(messages, options);
+        } catch (err) {
+            debug_log_err(`${provider.label}: Failed ${err}`)
+        }
     }
 
     throw new Error(`All AI providers failed`);
 }
 
-async function getVisionAiResponse(messages) {
-    try{
-        return await callGroqVisionModels(messages);
-    } catch (err) {
-        const failed_v_g = `GROQ_API_VISION_MODEL: Failed`
-        debug_log_err(failed_v_g)
-    }
-    throw new Error(`All VISION AI providers failed`)
+function resolveOrder(settings) {
+    const saved = (settings?.order ?? []).filter(id => PROVIDERS[id]);
+    const disabled = new Set(settings?.disabled ?? []);
+    const order = [...saved, ...DEFAULT_ORDER.filter(id => !saved.includes(id))];
+    return order.filter(id => !disabled.has(id));
 }
 
-export {getAiResponse, getVisionAiResponse, anthropic_image_model };
+async function getProviderStatus(settings) {
+    const saved = (settings?.order ?? []).filter(id => PROVIDERS[id]);
+    const order = [...saved, ...DEFAULT_ORDER.filter(id => !saved.includes(id))];
+    const disabled = new Set(settings?.disabled ?? []);
+
+    return Promise.all(order.map(async id => ({
+        id,
+        label: PROVIDERS[id].label,
+        enabled: !disabled.has(id),
+        available: await PROVIDERS[id].isAvailable()
+    })));
+}
+
+const PROVIDERS = {
+    ollama: {
+        label: 'Ollama',
+        paid: false,
+        isAvailable: async () => !!(await getOllamaModel()),
+        call: async (messages) => callOllama(messages, await getOllamaModel())
+    },
+    hackclub: {
+        label: 'Hack Club',
+        paid: false,
+        isAvailable: async () => !!process.env.HACKCLUB_API?.trim(),
+        call: callHackClub
+    },
+    anthropic: {
+        label: 'Anthropic',
+        paid: true,
+        isAvailable: async () => !!process.env.ANTHROPIC_API?.trim(),
+        call: callAnthropic_claude
+    },
+    groq: {
+        label: 'Groq',
+        paid: false,
+        isAvailable: async () => !!process.env.GROQ_API?.trim(),
+        call: callGroq
+    },
+    openrouter: {
+        label: 'OpenRouter',
+        paid: false,
+        isAvailable: async () => !!process.env.OPENROUTER_API?.trim(),
+        call: callOpenRouter
+    },
+    gemini: {
+        label: 'Gemini',
+        paid: false,
+        isAvailable: async () => !!process.env.GEMINI_API?.trim(),
+        call: callGemini
+    }
+};
+
+export { getAiResponse, anthropic_image_model, getProviderStatus };

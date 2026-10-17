@@ -30,6 +30,22 @@
     "commands_help": "",
     "HowToUse": "",
     "HowToUse_answer": "",
-    "languageName": ""
+    "languageName": "",
+    "notConfigured": "",
+    "ChooseProvider": "",
+    "AiProviders": "",
+    "allProvidersDisabled": "",
+    "up_button": "",
+    "down_button": "",
+    "on_off_button": "",
+    "reset_button": "",
+    "providerNotConfigured": "",
+    "toolSearch": "",
+    "toolInfographic": "",
+    "toolNotConfigured": "",
+    "toolRequiresSearch": "",
+    "toolImage": "",
+    "providers_help_title": "",
+    ""
 
 }

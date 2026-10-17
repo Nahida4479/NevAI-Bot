@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
-import { getAiResponse, getVisionAiResponse } from './src/models.js';
+import { Client, GatewayIntentBits, StringSelectMenuBuilder, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
+import { getAiResponse, getProviderStatus } from './src/models.js';
 import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
@@ -9,6 +9,7 @@ import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 import { sendLogEmbed } from './src/logs_command.js';
 import { startStatusServer } from './src/NevAI_status.js';
+import { detectGenerateImageProvider, isImageGenerationAvailable } from './src/generate_images/openrouter_gemini_generate_images/generate_image.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
@@ -30,6 +31,12 @@ if (!process.env.DISCORD_API) {
     console.log(styleText(['magenta', 'bold'], `Node version:${n_verson} System:${p_version}`))
     const pkg_read = JSON.parse(readFileSync('./package.json', 'utf-8'));
     debugging(`Environment: Node ${n_verson}, OS: ${p_version}, discord.js ${pkg_read.dependencies['discord.js']}`);
+}
+
+if (process.env.GENERATE_IMAGE_API && !detectGenerateImageProvider()) {
+    debug_log_err('GENERATE_IMAGE_API: unsupported key. Use an OpenRouter or Google AI Studio key.')
+} else if (!process.env.GENERATE_IMAGE_API) {
+    debug_log_warn('GENERATE_IMAGE_API not detected - image generation is not available.')
 }
 
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API && !detectedOllama ) {
@@ -161,8 +168,16 @@ client.on('messageCreate', async (message) => {
     const discord_people_username = `${message.author.username}, Server username: ${message.member.displayName}, Message send time: ${message.createdAt}, (${message.member.roles.highest.name})`
     history.push({ role: 'user', content: `${discord_people_username}: ${messageContent}` });
 
-    const basePrompt = `You are an assistant named ${client.user.username}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. You have access to a search_web tool. Don't use Discord @everyone and @here on your reply. For every specific fact (item name, character name, stat), you MUST indicate which search result it came from (e.g. "according to Result 1..."). NEVER write "Result N" as part of the sentence grammar (e.g. NOT "According to Result 1, the temperature..." - instead: "The temperature will be X°C. CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a source lists a specific team composition, reproduce the FULL list of team members exactly as given, not just one or two names. Do not summarize a named team into a vague phrase like "works well with X" - list every character mentioned in that composition. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail isn't explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
-    const systemPrompt = `${basePrompt}\n\n ${guildData.prompt}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
+    const disabledTools = getDisabledTools(guildData.tools);
+    const searchEnabled = !disabledTools.includes('search_web');
+
+    const webSearchRules = 'You have access to a search_web tool. For every specific fact (item name, character name, stat, world information), you MUST indicate which search result it came from (e.g. "according to Result 1..."). NEVER write "Result N" as part of the sentence grammar (e.g. NOT "According to Result 1, the temperature..." - instead: "The temperature will be X°C. CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a source lists a specific team composition, reproduce the FULL list of team members exactly as given, not just one or two names. Do not summarize a named team into a vague phrase like "works well with X" - list every character mentioned in that composition. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail is not explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong.'
+    
+    const NoWebSearchRules = 'You do NOT have internet access. If you are not sure about specific facts (game characters, builds, prices, current events), say so honestly instead of guessing.'
+
+    const basePrompt = `You are an assistant named ${client.user.username}. Always reply in the same language as the user's latest message. If you are unsure, reply in ${lang.languageName}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. Don't use Discord @everyone and @here on your reply. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>.`;
+
+    const systemPrompt = `${basePrompt}\n\n ${searchEnabled ? webSearchRules : NoWebSearchRules}\n\n ${guildData.prompt ?? ''}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
         ...history
@@ -179,50 +194,46 @@ client.on('messageCreate', async (message) => {
     
     const startTime = Date.now()
 
-    let response;
-    if (message.attachments.size > 0) {
-        const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
-        const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
-        const textPart = { type: "text", text: messageContent };
-        const createPart = [textPart, ...imageParts]
+        const images = await Promise.all([...message.attachments.values()]
+        .filter(a => a.contentType?.startsWith('image/'))
+        .map(async a => {
+            const buf = Buffer.from(await (await fetch(a.url)).arrayBuffer());
+            return { mimeType: a.contentType, base64: buf.toString('base64') };
+        }));
 
-        const visionMessage = [
-            ...messageToSend.slice(0, -1),
-            { role: 'user', content: createPart}
-        ];
-        try {
-        response = await getVisionAiResponse(visionMessage)
+    if (images.length > 0) {
+        const lastIndex = messageToSend.length - 1;
+        messageToSend[lastIndex] = {
+            role: 'user',
+            content: [
+                { type: 'text', text: messageToSend[lastIndex].content },
+                ...images.map(img => ({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.base64}` } }))
+            ]
+        };
+    }
+
+    let response;
+    try {
+        response = await getAiResponse(messageToSend, {
+            userId: message.author.id,
+            language: lang.languageName,
+            providerSettings: guildData.providers,
+            disabledTools: getDisabledTools(guildData.tools),
+            images
+        });
         await message.reactions.removeAll();
-        } catch (err) {
-            const err_vision = `Vision models error: ${err}`
-            debug_log_err(err_vision);
-            debugging(err)
-                await message.reactions.removeAll();
-                await message.reply({ content: `${getEmoji(client, 'error')} ${lang.noVisionModels}`})
-                await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
-                    { name: 'User message', value: message.content || `${lang.noMessageContent}` },
-                    { name: 'Error type', value: 'Vision models failed' },
-                    { name: 'Details', value: `\`${err}\``.slice(0, 200) }
-                ]);
-                return;
-        }
-    } else {
-        try {
-        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName })
+    } catch (err) {
+        debug_log_err(`ALL AI models error: ${err}`);
+        debugging(err);
         await message.reactions.removeAll();
-        } catch (err) {
-            const err_vision = `ALL AI models error: ${err}`
-            debug_log_err(err_vision);
-            debugging(err)
-            await message.reactions.removeAll();
-            await message.reply({ content: `${getEmoji(client, 'error')} ${lang.aiResponseError}` });
-            await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
-                { name: 'User message', value: message.content || `${lang.noMessageContent}` },
-                { name: 'Error type', value: 'AI models failed' },
-                { name: 'Details', value: `\`${err}\``.slice(0, 200) }
-            ]);
-            return;
-        }
+        const errorText = err.message === 'NO_PROVIDERS_ENABLED' ? lang.allProvidersDisabled : lang.aiResponseError;
+        await message.reply({ content: `${getEmoji(client, 'error')} ${errorText}` });
+        await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+            { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+            { name: 'Error type', value: 'AI models failed' },
+            { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+        ]);
+        return;
     }
 
     if (!response.content) {
@@ -253,7 +264,9 @@ client.on('messageCreate', async (message) => {
     const replyOption = { content: response.content, flags: MessageFlags.SuppressEmbeds };
 
 
-     if (response.infographicPng) {
+    if (response.generatedImage) {
+        replyOption.files = [new AttachmentBuilder(response.generatedImage, { name: 'image.png' })];
+    } else if (response.infographicPng) {
         replyOption.files = [new AttachmentBuilder(response.infographicPng, { name: 'infographic.png' })];
     } else if (response.imageResult && response.imageResult.length > 0) {
         try {
@@ -271,8 +284,96 @@ client.on('messageCreate', async (message) => {
     
 })
 
+function moveProvider(order, id, direction) {
+     const i = order.indexOf(id);
+    const j = i + direction;
+    if (i === -1 || j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+}
+
+const TOOL_BUTTONS = [
+    { name: 'search_web', labelKey: 'toolSearch', requires: ['EXA_API'] },
+    { name: 'create_infographic', labelKey: 'toolInfographic', requires: ['EXA_API', 'ANTHROPIC_API'], dependsOn: ['search_web'] },
+    { name: 'generate_image', labelKey: 'toolImage', requires: ['GENERATE_IMAGE_API'], check: isImageGenerationAvailable }
+];
+
+function isToolAvailable(tool) {
+      return tool.requires.every(key => process.env[key]?.trim()) && (tool.check?.() ?? true);
+}
+
+function getDisabledTools(toolSettings) {
+    const disabled = new Set(toolSettings?.disabled ?? []);
+    for (const t of TOOL_BUTTONS) {
+        const blocked = (t.dependsOn ?? []).some(dep => disabled.has(dep));
+        if (!isToolAvailable(t) || blocked) disabled.add(t.name);
+    }
+    return [...disabled];
+}
+
+async function buildProvidersPanel(settings, lang, selectedId = null, toolSettings = undefined) {
+    const list = await getProviderStatus(settings);
+
+    const lines = list.map((p, i) => {
+        const status = p.enabled && p.available ? `${ getEmoji(client, 'success')}` : `${ getEmoji(client, 'error')}`;
+        const warning = p.available ? '' : ` ⚠️ *${lang.notConfigured}*`;
+        const arrow = p.id === selectedId ? ' ◀' : '';
+        return `${i + 1}. ${status} **${p.label}**${warning}${arrow}`;
+    });
+
+    const embed = new EmbedBuilder()
+        .setTitle(`${lang.AiProviders}`)
+        .setDescription(lines.join('\n'))
+        .setColor(0xD65940);
+
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId('prov_select')
+        .setPlaceholder(`${lang.ChooseProvider}`)
+        .addOptions(list.map(p => ({ label: p.label, value: p.id, default: p.id === selectedId })));
+
+    const id = selectedId ?? 'none';
+    const buttons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`prov_up:${id}`).setLabel(`⬆️ ${lang.up_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_down:${id}`).setLabel(`⬇️ ${lang.down_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId(`prov_toggle:${id}`).setLabel(`🔁 ${lang.on_off_button}`).setStyle(ButtonStyle.Primary).setDisabled(!selectedId),
+        new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('providers_help').setLabel('❓ Help').setStyle(ButtonStyle.Secondary)
+    );
+
+    const disabledTools = getDisabledTools(toolSettings);
+    const toolRow = new ActionRowBuilder().addComponents(
+        TOOL_BUTTONS.map(t => {
+            const available = isToolAvailable(t);
+            const enabled = !disabledTools.includes(t.name);
+
+            let style = ButtonStyle.Secondary;
+            if (!available) style = ButtonStyle.Danger;
+            else if (enabled) style = ButtonStyle.Success;
+
+            return new ButtonBuilder()
+                .setCustomId(`tool_toggle:${t.name}`)
+                .setLabel(`${enabled ? '✅' : '❌'} ${lang[t.labelKey]}`)
+                .setStyle(style)
+        })
+    )
+
+    return { embeds: [embed], components: [new ActionRowBuilder().addComponents(menu), buttons, toolRow] };
+}
 
 client.on('interactionCreate', async (interaction) => {
+
+    if (interaction.isButton() && interaction.customId === 'providers_help') {
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+
+    const helpEmbed = new EmbedBuilder()
+        .setTitle(lang.providers_help_title)
+        .setDescription(lang.providers_help_text)
+        .setImage('https://cdn.hackclub.com/01a14bad-fdfb-7f27-b6f8-186cfc42164e/tutorial_ai_provider.gif')
+        .setColor(0xD65940);
+
+    await interaction.reply({ embeds: [helpEmbed], flags: MessageFlags.Ephemeral });
+}
+
     if (interaction.isChatInputCommand()) {
 
     if (interaction.commandName === 'ai') {
@@ -351,13 +452,14 @@ if (interaction.commandName === 'language') {
 
 
 if (interaction.commandName === 'ai_settings') {
+    const data = loadData()
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
     if (!interaction.memberPermissions.has('Administrator')) {
         await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.onlyOwner}`, flags: MessageFlags.Ephemeral});
         return;
     }
-    const data = loadData()
-    const langCode = data[interaction.guildId]?.language || 'EN';
-    const lang = loadLanguage(langCode);
 
     const embed = new EmbedBuilder()
         .setAuthor({ name: 'NevAI', iconURL: 'https://cdn.hackclub.com/01a06e42-3b6f-7248-b3f9-b82a2612d31e/nevai-logo-512.png' })
@@ -378,10 +480,16 @@ if (interaction.commandName === 'ai_settings') {
         .setLabel(lang.AddEmoji)
         .setStyle(ButtonStyle.Danger)
 
+    const providers_button = new ButtonBuilder()
+    .setCustomId('providers_button')
+    .setLabel(lang.AiProviders)
+    .setStyle(ButtonStyle.Danger);
+
+    const row_providers = new ActionRowBuilder().addComponents(providers_button);
     const row = new ActionRowBuilder().addComponents(button);
     const row_emoji = new ActionRowBuilder().addComponents(emoji_button);
     
-    await interaction.reply({ embeds: [embed], components: [row, row_emoji], flags: MessageFlags.Ephemeral})
+    await interaction.reply({ embeds: [embed], components: [row, row_emoji, row_providers], flags: MessageFlags.Ephemeral})
     }
 }
 
@@ -427,6 +535,95 @@ if (interaction.isButton() && interaction.customId === 'open_prompt') {
     modal.addComponents(modalRow)
 
     await interaction.showModal(modal);
+}
+
+if (interaction.isStringSelectMenu() && interaction.customId === 'prov_select') {
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+
+    const selected = interaction.values[0];
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, selected, data[interaction.guildId]?.tools);
+    await interaction.update(panel);
+}
+
+if (interaction.isButton() && interaction.customId.startsWith('prov_')) {
+    const [action, id] = interaction.customId.split(':');
+    debugging(`Provider button: action=${action}, id=${id}`)
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+    data[interaction.guildId] ??= {};
+    const guild = data[interaction.guildId];
+
+    if (action === 'prov_reset') {
+        delete guild.providers;
+        saveData(data);
+        await interaction.update(await buildProvidersPanel(undefined, lang, null, guild.tools));
+        return;
+    }
+
+    const list = await getProviderStatus(guild.providers);
+    const order = list.map(p => p.id);
+    const disabled = list.filter(p => !p.enabled).map(p => p.id);
+
+    if (action === 'prov_up') moveProvider(order, id, -1);
+    if (action === 'prov_down') moveProvider(order, id, +1);
+
+    if (action === 'prov_toggle') {
+        const target = list.find(p => p.id === id);
+        if (!target?.available) {
+            await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.providerNotConfigured}`, flags: MessageFlags.Ephemeral })
+            return;
+        }
+
+        if (disabled.includes(id)) {
+            disabled.splice(disabled.indexOf(id), 1);
+        } else {
+            disabled.push(id);
+        }
+    }
+
+    debugging(`Saving providers: ${JSON.stringify({ order, disabled })}`);
+    guild.providers = { order, disabled };
+    saveData(data);
+    await interaction.update(await buildProvidersPanel(guild.providers, lang, id, guild.tools));
+}
+
+if (interaction.isButton() && interaction.customId.startsWith('tool_toggle:')) {
+    const toolName = interaction.customId.split(':')[1];
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+    const tool = TOOL_BUTTONS.find(t => t.name === toolName);
+    if (!tool || !isToolAvailable(tool)) {
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.toolNotConfigured}`, flags: MessageFlags.Ephemeral });
+        return;
+    }
+    data[interaction.guildId] ??= {};
+    const guild = data[interaction.guildId];
+
+    const blockedBy = (tool.dependsOn ?? []).filter(dep => guild.tools?.disabled?.includes(dep));
+    if (blockedBy.length > 0) {
+        await interaction.reply({ content: `${getEmoji(client, 'error')} ${lang.toolRequiresSearch}`, flags: MessageFlags.Ephemeral });
+        return;
+    }
+    guild.tools ??= { disabled: [] };
+    const list = guild.tools.disabled;
+    if (list.includes(toolName)) {
+        list.splice(list.indexOf(toolName), 1);
+    } else {
+        list.push(toolName);
+    }
+
+    saveData(data);
+    await interaction.update(await buildProvidersPanel(guild.providers, lang, null, guild.tools));
+}
+
+if (interaction.isButton() && interaction.customId === 'providers_button') {
+    const data = loadData();
+    const langCode = data[interaction.guildId]?.language || 'EN';
+    const lang = loadLanguage(langCode);
+
+    const panel = await buildProvidersPanel(data[interaction.guildId]?.providers, lang, null, data[interaction.guildId]?.tools);
+    await interaction.reply({ ...panel, flags: MessageFlags.Ephemeral });
 }
 
 

@@ -30,5 +30,22 @@
     "commands_help": "Komendy dla administratora",
     "HowToUse": "Jak korzystać z bota?",
     "HowToUse_answer": "Oznacz bota na kanale AI i zadaj pytanie (Administrator serwera musi dodać kanał /ai).",
-    "languageName": "Polish"
+    "languageName": "Polish",
+    "notConfigured": "Nie skonfigurowano",
+    "ChooseProvider": "Wybierz dostawcę usług AI",
+    "AiProviders": "Zarządzaj dostawcami AI",
+    "allProvidersDisabled": "Wszyscy dostawcy AI są wyłączeni. Administrator może ich włączyć w `/ai_settings`.",
+    "up_button": "Wyżej",
+    "down_button": "Niżej",
+    "on_off_button": "Włącz/Wyłącz dostawcę",
+    "reset_button": "Przywróć domyślną kolejność",
+    "providerNotConfigured": "Klucz API dostawcy nie został dodany do pliku `.env` bądź nie wykryto Ollamy.",
+    "toolSearch": "Wyszukiwanie (Exa)",
+    "toolInfographic": "Tworzenie infografik (Claude)",
+    "toolNotConfigured": "To narzędzie nie jest skonfigurowane. Dodaj wymagany klucz API do pliku `.env`.",
+    "toolRequiresSearch": "Tworzenie infografik wymaga włączonego wyszukiwania (Exa).",
+    "toolImage": "Generowanie grafik (płatne)",
+    "help_button": "Pomoc",
+    "providers_help_title": "Jak zarządzać dostawcami AI?",
+    "providers_help_text": "**Kolejność:** ⬆️ i ⬇️ zmieniają, który dostawca odpowiada pierwszy. Najpierw wybierz go z listy.\n**Włączanie:** 🔁 wyłącza lub włącza wybranego dostawcę.\n**Narzędzia:** przyciski na dole włączają lub wyłączają wyszukiwanie w internecie (Exa), tworzenie infografik i generowanie lub edycje obrazów. Zielony oznacza włączone a czerwony wyłączone.\n**Nie skonfigurowano:** brak klucza w `.env`, dostawca nie będzie używany.\n**Reset:** przywraca domyślną kolejność."
 }

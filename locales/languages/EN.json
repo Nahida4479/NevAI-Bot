@@ -30,5 +30,23 @@
     "commands_help": "Bot Administrator Commands",
     "HowToUse": "How to use?",
     "HowToUse_answer": "Mention the bot in the AI channel and ask your question (The server administrator must add the /ai channel).",
-    "languageName": "English"
+    "languageName": "English",
+    "notConfigured": "Not configured",
+    "ChooseProvider": "Choose a provider",
+    "AiProviders": "Manage AI providers",
+    "allProvidersDisabled": "All AI providers are disabled. An administrator can enable them in `/ai_settings`.",
+    "up_button": "Up",
+    "down_button": "Down",
+    "on_off_button": "On/Off provider",
+    "reset_button": "Reset to default",
+    "providerNotConfigured": "The provider API key has not been added to the `.env` file, or Ollama has not been detected.",
+    "toolSearch": "Web search (Exa)",
+    "toolInfographic": "Create infographics (Claude)",
+    "toolNotConfigured": "This tool is not configured. Add the required API key to the `.env` file.",
+    "toolRequiresSearch": "Infographics require web search (Exa) to be enabled.",
+    "help_button": "Help",
+    "toolImage": "Image generation (paid)",
+    "providers_help_title": "How to manage AI providers?",
+    "providers_help_text": "**Order:** ⬆️ and ⬇️ change which provider answers first. Select it from the list first.\n**Enable/disable:** 🔁 turns the selected provider on or off.\n**Tools:** the buttons at the bottom turn web search (Exa), infographics and image generation on or off. Green means enabled.\n**Not configured:** no key in `.env`, so the provider is not used.\n**Reset:** restores the default order."
+
 }
