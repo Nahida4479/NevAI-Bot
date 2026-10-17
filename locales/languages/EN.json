@@ -44,7 +44,9 @@
     "toolInfographic": "Create infographics (Claude)",
     "toolNotConfigured": "This tool is not configured. Add the required API key to the `.env` file.",
     "toolRequiresSearch": "Infographics require web search (Exa) to be enabled.",
-    "toolImage": "Image generation (paid)"
-
+    "help_button": "Help",
+    "toolImage": "Image generation (paid)",
+    "providers_help_title": "How to manage AI providers?",
+    "providers_help_text": "**Order:** ⬆️ and ⬇️ change which provider answers first. Select it from the list first.\n**Enable/disable:** 🔁 turns the selected provider on or off.\n**Tools:** the buttons at the bottom turn web search (Exa), infographics and image generation on or off. Green means enabled.\n**Not configured:** no key in `.env`, so the provider is not used.\n**Reset:** restores the default order."
 
 }

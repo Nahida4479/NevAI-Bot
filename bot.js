@@ -335,7 +335,8 @@ async function buildProvidersPanel(settings, lang, selectedId = null, toolSettin
         new ButtonBuilder().setCustomId(`prov_up:${id}`).setLabel(`⬆️ ${lang.up_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
         new ButtonBuilder().setCustomId(`prov_down:${id}`).setLabel(`⬇️ ${lang.down_button}`).setStyle(ButtonStyle.Secondary).setDisabled(!selectedId),
         new ButtonBuilder().setCustomId(`prov_toggle:${id}`).setLabel(`🔁 ${lang.on_off_button}`).setStyle(ButtonStyle.Primary).setDisabled(!selectedId),
-        new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger)
+        new ButtonBuilder().setCustomId('prov_reset:none').setLabel(`↩️ ${lang.reset_button}`).setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('providers_help').setLabel('❓ Help').setStyle(ButtonStyle.Secondary)
     );
 
     const disabledTools = getDisabledTools(toolSettings);
@@ -359,6 +360,20 @@ async function buildProvidersPanel(settings, lang, selectedId = null, toolSettin
 }
 
 client.on('interactionCreate', async (interaction) => {
+
+    if (interaction.isButton() && interaction.customId === 'providers_help') {
+    const data = loadData();
+    const lang = loadLanguage(data[interaction.guildId]?.language || 'EN');
+
+    const helpEmbed = new EmbedBuilder()
+        .setTitle(lang.providers_help_title)
+        .setDescription(lang.providers_help_text)
+        .setImage('https://cdn.hackclub.com/01a14bad-fdfb-7f27-b6f8-186cfc42164e/tutorial_ai_provider.gif')
+        .setColor(0xD65940);
+
+    await interaction.reply({ embeds: [helpEmbed], flags: MessageFlags.Ephemeral });
+}
+
     if (interaction.isChatInputCommand()) {
 
     if (interaction.commandName === 'ai') {

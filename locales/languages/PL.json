@@ -44,5 +44,8 @@
     "toolInfographic": "Tworzenie infografik (Claude)",
     "toolNotConfigured": "To narzędzie nie jest skonfigurowane. Dodaj wymagany klucz API do pliku `.env`.",
     "toolRequiresSearch": "Tworzenie infografik wymaga włączonego wyszukiwania (Exa).",
-    "toolImage": "Generowanie grafik (płatne)"
+    "toolImage": "Generowanie grafik (płatne)",
+    "help_button": "Pomoc",
+    "providers_help_title": "Jak zarządzać dostawcami AI?",
+    "providers_help_text": "**Kolejność:** ⬆️ i ⬇️ zmieniają, który dostawca odpowiada pierwszy. Najpierw wybierz go z listy.\n**Włączanie:** 🔁 wyłącza lub włącza wybranego dostawcę.\n**Narzędzia:** przyciski na dole włączają lub wyłączają wyszukiwanie w internecie (Exa), tworzenie infografik i generowanie lub edycje obrazów. Zielony oznacza włączone a czerwony wyłączone.\n**Nie skonfigurowano:** brak klucza w `.env`, dostawca nie będzie używany.\n**Reset:** przywraca domyślną kolejność."
 }

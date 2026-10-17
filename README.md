@@ -30,8 +30,9 @@
 - Live logs support (`/logs` command).
 - The bot can use custom Discord server emoji.
 - Responds using `Exa.ai`.
-- Generate infographic (only Anthropic models)
-- Running local models using Ollama
+- Generate infographic (only Anthropic models).
+- Running local models using Ollama.
+- Generate and edits images.
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
@@ -74,6 +75,18 @@ Free models (openrouter/free)
 **Anthropic**
 ```yaml
 Claude Haiku 5.5
+```
+
+## Generate image AI (paid model)
+
+**OpenRouter**
+```yaml
+google/gemini-3.1-flash-lite-image
+```
+
+**Gemini**
+```yaml
+gemini-3.1-flash-lite-image
 ```
 
 ---
@@ -138,12 +151,16 @@ image: {
 | **Commands** | **Description** |
 |---|---|
 | `/ai` | Set the channel where the AI will respond to mentions.|
-| `/ai_settings` | Open the settings panel to customize the AI prompt and reaction emoji. |
+| `/ai_settings` | Open the settings panel to customize the AI prompt, AI providers and reaction emoji. |
 | `/language` | Change the bot's response language. |
 | `/logs` | Set the channel where AI response logs will be sent. |
 | `/help` | List of commands in embed format |
 
+## Manage AI providers (using /ai_settings)
 
+Managing AI providers lets you set which provider answers first by changing the order in the list. You can also enable or disable each provider. If a provider's token has not been added to `.env`, the **⚠️ Not configured** label is shown. In the AI provider settings you can also enable or disable [web search with Exa](#models-web-search-exaai), [infographic generation](#how-infographic-generation-works-required-anthropic-model-and-exaai) (which uses Exa and Claude models), and [image generation or editing](#image-generation-openrouter-or-google-gemini-paid) with Gemini models.
+
+![Manage AI providers](./public/ai_providers_manage.png)
 
 # Requirements
 

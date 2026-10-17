@@ -16,6 +16,6 @@ export const MODELS = {
     // Generate images (paid api)
      image: {
         openrouter: 'google/gemini-3.1-flash-lite-image', // Paid
-        // google: 'gemini-3.1-flash-lite-image', // Paid
+        google: 'gemini-3.1-flash-lite-image', // Paid
     },
 };
