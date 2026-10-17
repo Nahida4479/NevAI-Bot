@@ -33,6 +33,7 @@
 - Generate infographic (only Anthropic models).
 - Running local models using Ollama.
 - Generate and edits images.
+- Manage AI providers and tools from `/ai_settings`
 
 # How to use?
 1. [Add bot](https://discord.com/oauth2/authorize?client_id=1544417524613910628&permissions=17179995200&integration_type=0&scope=bot) and set the AI channel using the `/ai` command.
