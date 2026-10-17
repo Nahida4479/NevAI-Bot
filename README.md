@@ -144,7 +144,8 @@ image: {
 },
 ```
 
-> **Warning:** image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
+> [!WARNING] 
+> Image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
 
 # Administrator commands
 
