@@ -19,6 +19,7 @@ async function generateViaGoogleApi(prompt, images, model) {
     const data = await res.json();
     const part = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part) throw new Error('No image returned');
+    console.log(styleText(['greenBright', 'bold'], `GOOGLE_IMAGE_API: ${model}`));
     return Buffer.from(part.inlineData.data, 'base64');
 }
 

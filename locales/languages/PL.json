@@ -43,5 +43,6 @@
     "toolSearch": "Wyszukiwanie (Exa)",
     "toolInfographic": "Tworzenie infografik (Claude)",
     "toolNotConfigured": "To narzędzie nie jest skonfigurowane. Dodaj wymagany klucz API do pliku `.env`.",
-    "toolRequiresSearch": "Tworzenie infografik wymaga włączonego wyszukiwania (Exa)."
+    "toolRequiresSearch": "Tworzenie infografik wymaga włączonego wyszukiwania (Exa).",
+    "toolImage": "Generowanie grafik (płatne)"
 }

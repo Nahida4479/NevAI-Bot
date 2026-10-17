@@ -43,7 +43,8 @@
     "toolSearch": "Web search (Exa)",
     "toolInfographic": "Create infographics (Claude)",
     "toolNotConfigured": "This tool is not configured. Add the required API key to the `.env` file.",
-    "toolRequiresSearch": "Infographics require web search (Exa) to be enabled."
+    "toolRequiresSearch": "Infographics require web search (Exa) to be enabled.",
+    "toolImage": "Image generation (paid)"
 
 
 }

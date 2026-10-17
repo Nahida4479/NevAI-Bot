@@ -1,6 +1,7 @@
 import { MODELS } from "../../../providers_list.js";
 import { generateViaGoogleApi } from "./generate_gemini.js";
 import { generateViaOpenRouter } from "./generate_openrouter.js";
+import { styleText } from 'node:util';
 
 function detectGenerateImageProvider() {
     const image_provider_api = process.env.GENERATE_IMAGE_API?.trim();

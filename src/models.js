@@ -416,4 +416,24 @@ const PROVIDERS = {
 };
 
 
+const VISION_PROVIDERS = {
+    groq:       { isAvailable: () => !!process.env.GROQ_API?.trim(),       call: callGroqVision },
+    gemini:     { isAvailable: () => !!process.env.GEMINI_API?.trim(),     call: callGeminiVision },
+    openrouter: { isAvailable: () => !!process.env.OPENROUTER_API?.trim(), call: callOpenRouterVision },
+    anthropic:  { isAvailable: () => !!process.env.ANTHROPIC_API?.trim(),  call: callAnthropicVision },
+};
+
+async function getVisionAiResponse(messages) {
+    for (const id of VISION_ORDER) {
+        const provider = VISION_PROVIDERS[id];
+        if (!provider.isAvailable()) continue;
+        try {
+            return await provider.call(messages);
+        } catch (err) {
+            debug_log_err(`VISION ${id}: Failed ${err}`);
+        }
+    }
+    throw new Error('All VISION AI providers failed');
+}
+
 export { getAiResponse, getVisionAiResponse, anthropic_image_model, getProviderStatus };

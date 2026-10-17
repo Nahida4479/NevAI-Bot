@@ -1,3 +1,5 @@
+import { styleText } from 'node:util';
+
 async function generateViaOpenRouter(prompt, images, model) {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -25,6 +27,7 @@ async function generateViaOpenRouter(prompt, images, model) {
     const data = await res.json();
     const url = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!url) throw new Error('No image returned');
+    console.log(styleText(['greenBright', 'bold'], `OPENROUTER_IMAGE_API: ${model}`));
     return Buffer.from(url.split(',')[1], 'base64');
 }
 
