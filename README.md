@@ -65,15 +65,6 @@ openai/gpt-6-luna
 Free models (openrouter/free)
 ```
 
----
-
-## Models for vision (free)
-
-**Groq**
-```yaml
-qwen/qwen3.6-27b 
-qwen/qwen3.8-27b
-```
 > [!WARNING]
 > The model list may change at any time. Free models can be renamed, limited or removed by their providers.
 
@@ -123,6 +114,24 @@ flowchart LR
 If both `ANTHROPIC_API` and `EXA_API` are set in `.env`, every provider __except Gemini, Ollama and vision models__ gets access to the `create_infographic` tool. The tool generates custom infographics based on the data returned by `Exa`. The infographic itself is always **drawn by an Anthropic model** (tested with Haiku 5.5).
 
 For example, if you are currently using the `Hack Club provider`, its model (as long as it supports tools) can request an infographic. The bot then searches `Exa` for facts and images, and the `Anthropic model` picks the character portrait and draws the infographic. The finished image is attached to the **reply on Discord**, and the main model only receives a confirmation that the infographic was created, so it can add a short message.
+
+
+# Image generation (OpenRouter or Google Gemini, paid)
+
+The `generate_image` tool generates new images and edits images sent by the user. The request is sent to the model defined in `providers_list.js`. To use image generation, you need at least one of the following API keys set in `.env` under `GENERATE_IMAGE_API=`. The provider is detected automatically from the key you paste:
+
+- **OpenRouter** (key starts with `sk-or-`)
+- **Google Gemini** (key starts with `AIza`)
+
+The models used for each provider are defined in `providers_list.js`:
+```js
+image: {
+    openrouter: 'google/gemini-3.1-flash-lite-image', // Paid
+    google: 'gemini-3.1-flash-lite-image',            // Paid
+},
+```
+
+> **Warning:** image generation is a paid feature. Every generated or edited image is charged to the API key owner. Set a spending limit on your key before enabling it.
 
 # Administrator commands
 
