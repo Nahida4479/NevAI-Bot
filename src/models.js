@@ -23,7 +23,6 @@ if (process.env.GROQ_API) {
 const geminiModels = MODELS.gemini;
 const groqModels = MODELS.groq;
 const HackClubModels = MODELS.hackclub;
-const visionModel = MODELS.groqVision;
 const openroute = MODELS.openrouter;
 
 // Paid AI models
@@ -60,7 +59,7 @@ async function executeTool(name, input, ctx) {
 
     if (name === 'generate_image') {
         try {
-            ctx.generatedImage = await GenerateImage(input.prompt || '');
+            ctx.generatedImage = await GenerateImage(input.prompt || '', ctx.images);
             return 'Image generated successfully and attached to the reply. Briefly describe it to the user.';
         } catch (err) {
             debug_log_err(`Image generation failed: ${err}`);
@@ -77,8 +76,8 @@ async function executeTool(name, input, ctx) {
 }
 
 
-function newCtx(userId, language, disabledTools = []) {
-    return { userId, language, disabledTools, usedInternetSearch: false, imageResult: undefined, infographicPng: null, generatedImage: null };
+function newCtx(userId, language, disabledTools = [], images = []) {
+    return { userId, language, disabledTools, images, usedInternetSearch: false, imageResult: undefined, infographicPng: null, generatedImage: null };
 }
 
 function toolOptions(lastRound, ctx) {
@@ -128,12 +127,22 @@ function buildResult(content, model, ctx) {
     };
 }
 
-async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
+function toAnthropicContent(content) {
+    if (!Array.isArray(content)) return content;
+    return content.map(part => {
+        if (part.type !== 'image_url') return part;
+        const match = part.image_url.url.match(/^data:(.+?);base64,(.+)$/);
+        if (!match) return part;
+        return { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } };
+    });
+}
+
+async function callAnthropic_claude(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of anthropic_claude) {
         let inputTokens = 0;
         let outputTokens = 0;
         const system = messages[0].content;
-        const chat = messages.slice(1);
+        const chat = messages.slice(1).map(m => ({ ...m, content: toAnthropicContent(m.content) }));
         while (chat.length && chat[0].role == "assistant") chat.shift();
         let searchedImageResult;
         let usedInternetSearch = false;
@@ -152,6 +161,7 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
 
             for (let round = 0; round < 3; round++) {
                 const lastRound = round === 2;
+                debugging(`Anthropic tools: ${enabledTools.map(t => t.name).join(', ')}`);
                 response = await client.messages.create({
                     max_tokens: 2500,
                     system,
@@ -194,7 +204,7 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
 
                     } else if (toolUse.name === 'generate_image') {
                         try {
-                            generatedImage = await GenerateImage(toolUse.input.prompt || '');
+                            generatedImage = await GenerateImage(toolUse.input.prompt || '', images);
                             toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generated successfully and attached to the reply.' });
                         } catch (err) {
                             debug_log_err(`Image generation failed: ${err}`);
@@ -220,9 +230,9 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
     throw new Error("All Anthropic API models failed")
 }
 
-async function callHackClub(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
+async function callHackClub(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of HackClubModels) {
-        const ctx = newCtx(userId, language, disabledTools);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
@@ -242,9 +252,9 @@ async function callHackClub(messages, { userId = 'unknown', language = 'English'
     throw new Error(`All HackClub API models failed`)
 }
 
-async function callOpenRouter(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
+async function callOpenRouter(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of openroute) {
-        const ctx = newCtx(userId, language, disabledTools);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { data, message } = await runToolLoop(async (conversation, lastRound) => {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -264,9 +274,9 @@ async function callOpenRouter(messages, { userId = 'unknown', language = 'Englis
     throw new Error(`All OpenRouter models failed`)
 }
 
-async function callGroq(messages, { userId = 'unknown', language = 'English', disabledTools = [] } = {}) {
+async function callGroq(messages, { userId = 'unknown', language = 'English', disabledTools = [], images = [] } = {}) {
     for (const model of groqModels) {
-        const ctx = newCtx(userId, language, disabledTools);
+        const ctx = newCtx(userId, language, disabledTools, images);
         try {
             const { message } = await runToolLoop(async (conversation, lastRound) => {
                 try {
@@ -290,20 +300,6 @@ async function callGroq(messages, { userId = 'unknown', language = 'English', di
         }
     }
     throw new Error(`All Groq Api models failed`)
-}
-
-async function callGroqVisionModels(messages) {
-    for (const model of visionModel) {
-        try {
-            const response = await groq.chat.completions.create({ messages, model, reasoning_format: "hidden"});
-            console.log(styleText(['greenBright', 'bold'], `GROQ_API_VISIONS_MODEL: ${model}`));
-            return { content: response.choices[0].message.content, model: model }
-        } catch (err) {
-            const logs_vi_groq = `GROQ_API_VISIONS_MODEL ${model} failed, ${err}`;
-            debug_log_err(logs_vi_groq)
-        }
-    }
-    throw new Error(`All Groq Api vision models failed`)
 }
 
 async function callGemini(messages) {
@@ -344,16 +340,6 @@ async function getAiResponse(messages, options = {}) {
     }
 
     throw new Error(`All AI providers failed`);
-}
-
-async function getVisionAiResponse(messages) {
-    try{
-        return await callGroqVisionModels(messages);
-    } catch (err) {
-        const failed_v_g = `GROQ_API_VISION_MODEL: Failed`
-        debug_log_err(failed_v_g)
-    }
-    throw new Error(`All VISION AI providers failed`)
 }
 
 function resolveOrder(settings) {
@@ -415,25 +401,4 @@ const PROVIDERS = {
     }
 };
 
-
-const VISION_PROVIDERS = {
-    groq:       { isAvailable: () => !!process.env.GROQ_API?.trim(),       call: callGroqVision },
-    gemini:     { isAvailable: () => !!process.env.GEMINI_API?.trim(),     call: callGeminiVision },
-    openrouter: { isAvailable: () => !!process.env.OPENROUTER_API?.trim(), call: callOpenRouterVision },
-    anthropic:  { isAvailable: () => !!process.env.ANTHROPIC_API?.trim(),  call: callAnthropicVision },
-};
-
-async function getVisionAiResponse(messages) {
-    for (const id of VISION_ORDER) {
-        const provider = VISION_PROVIDERS[id];
-        if (!provider.isAvailable()) continue;
-        try {
-            return await provider.call(messages);
-        } catch (err) {
-            debug_log_err(`VISION ${id}: Failed ${err}`);
-        }
-    }
-    throw new Error('All VISION AI providers failed');
-}
-
-export { getAiResponse, getVisionAiResponse, anthropic_image_model, getProviderStatus };
+export { getAiResponse, anthropic_image_model, getProviderStatus };

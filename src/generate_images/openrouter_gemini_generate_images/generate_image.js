@@ -34,7 +34,7 @@ const imageToolOpenAI = {
     type: 'function',
     function: {
         name: 'generate_image',
-        description: 'Generate an image from a text description. Use ONLY when the user explicitly asks to create, draw or generate a picture.',
+        description: 'Generate or edit an image. Use this when the user asks to create, draw, generate, change, or add something to a picture. If the user attached or referenced an image, it is passed to this tool automatically, so describe only the desired change or the new image in the prompt.',
         parameters: {
             type: 'object',
             properties: {

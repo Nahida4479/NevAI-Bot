@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, StringSelectMenuBuilder, EmbedBuilder, MessageFlags, ButtonStyle, ButtonBuilder, ActionRowBuilder, Message, ModalBuilder, TextInputBuilder, TextInputStyle, MessageCollector, AttachmentBuilder, GuildChannel } from 'discord.js';
-import { getAiResponse, getVisionAiResponse, getProviderStatus } from './src/models.js';
+import { getAiResponse, getProviderStatus } from './src/models.js';
 import { aiCommand, aiSettingsCommand, logsCommand, helpCommand } from './src/create_command.js';
 import { saveData, loadData } from './src/save_data.js';
 import { loadLanguage, languageCommand } from './locales/languages.js';
@@ -194,51 +194,46 @@ client.on('messageCreate', async (message) => {
     
     const startTime = Date.now()
 
-    let response;
-    if (message.attachments.size > 0) {
-        const attachment = message.attachments.filter(a => a.contentType?.startsWith('image/')).map(a => a.url); 
-        const imageParts = attachment.map(url => ({ type: "image_url", image_url: { url } }))
-        const textPart = { type: "text", text: messageContent };
-        const createPart = [textPart, ...imageParts]
+        const images = await Promise.all([...message.attachments.values()]
+        .filter(a => a.contentType?.startsWith('image/'))
+        .map(async a => {
+            const buf = Buffer.from(await (await fetch(a.url)).arrayBuffer());
+            return { mimeType: a.contentType, base64: buf.toString('base64') };
+        }));
 
-        const visionMessage = [
-            ...messageToSend.slice(0, -1),
-            { role: 'user', content: createPart}
-        ];
-        try {
-        response = await getVisionAiResponse(visionMessage)
+    if (images.length > 0) {
+        const lastIndex = messageToSend.length - 1;
+        messageToSend[lastIndex] = {
+            role: 'user',
+            content: [
+                { type: 'text', text: messageToSend[lastIndex].content },
+                ...images.map(img => ({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.base64}` } }))
+            ]
+        };
+    }
+
+    let response;
+    try {
+        response = await getAiResponse(messageToSend, {
+            userId: message.author.id,
+            language: lang.languageName,
+            providerSettings: guildData.providers,
+            disabledTools: getDisabledTools(guildData.tools),
+            images
+        });
         await message.reactions.removeAll();
-        } catch (err) {
-            const err_vision = `Vision models error: ${err}`
-            debug_log_err(err_vision);
-            debugging(err)
-                await message.reactions.removeAll();
-                await message.reply({ content: `${getEmoji(client, 'error')} ${lang.noVisionModels}`})
-                await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
-                    { name: 'User message', value: message.content || `${lang.noMessageContent}` },
-                    { name: 'Error type', value: 'Vision models failed' },
-                    { name: 'Details', value: `\`${err}\``.slice(0, 200) }
-                ]);
-                return;
-        }
-    } else {
-        try {
-        response = await getAiResponse(messageToSend, { userId: message.author.id, language: lang.languageName,  providerSettings: guildData.providers, disabledTools: getDisabledTools(guildData.tools) ?? [] })
+    } catch (err) {
+        debug_log_err(`ALL AI models error: ${err}`);
+        debugging(err);
         await message.reactions.removeAll();
-        } catch (err) {
-            const err_vision = `ALL AI models error: ${err}`
-            debug_log_err(err_vision);
-            debugging(err)
-            await message.reactions.removeAll();
-            const errorText = err.message === 'NO_PROVIDERS_ENABLED' ? lang.allProvidersDisabled : lang.aiResponseError;
-            await message.reply({ content: `${getEmoji(client, 'error')} ${errorText}` });
-            await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
-                { name: 'User message', value: message.content || `${lang.noMessageContent}` },
-                { name: 'Error type', value: 'AI models failed' },
-                { name: 'Details', value: `\`${err}\``.slice(0, 200) }
-            ]);
-            return;
-        }
+        const errorText = err.message === 'NO_PROVIDERS_ENABLED' ? lang.allProvidersDisabled : lang.aiResponseError;
+        await message.reply({ content: `${getEmoji(client, 'error')} ${errorText}` });
+        await sendLogEmbed(client, guildData, 'AI error', 0xFF0000, [
+            { name: 'User message', value: message.content || `${lang.noMessageContent}` },
+            { name: 'Error type', value: 'AI models failed' },
+            { name: 'Details', value: `\`${err}\``.slice(0, 200) }
+        ]);
+        return;
     }
 
     if (!response.content) {
