@@ -35,6 +35,7 @@ ask HACKCLUB_API no
 ask OPENROUTER_API no
 ask ANTHROPIC_API no
 ask EXA_API no
+ask GENERATE_IMAGE_API no
 ask_visible OLLAMA_URL "optional, Enter = http://127.0.0.1:11434"
 ask_visible OLLAMA_MODEL "optional, Enter = first model found"
 printf 'DEBUG_MODE=true\n' >> .env.tmp
