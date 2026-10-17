@@ -9,6 +9,8 @@ function detectGenerateImageProvider() {
     if (image_provider_api.startsWith('sk-or-')) return 'openrouter';
     if (image_provider_api.startsWith('AIza')) return 'google';
     return null
+
+
 }
 
 function isImageGenerationAvailable() {
@@ -27,5 +29,25 @@ async function GenerateImage(prompt, images = []) {
 }
 
 
+const imageToolOpenAI = {
+    type: 'function',
+    function: {
+        name: 'generate_image',
+        description: 'Generate an image from a text description. Use ONLY when the user explicitly asks to create, draw or generate a picture.',
+        parameters: {
+            type: 'object',
+            properties: {
+                prompt: { type: 'string', description: 'Detailed description of the image, in English.' }
+            },
+            required: ['prompt']
+        }
+    }
+};
 
-export {detectGenerateImageProvider}
+const imageToolClaude = {
+    name: imageToolOpenAI.function.name,
+    description: imageToolOpenAI.function.description,
+    input_schema: imageToolOpenAI.function.parameters
+};
+
+export {detectGenerateImageProvider, isImageGenerationAvailable, GenerateImage, imageToolClaude, imageToolOpenAI }

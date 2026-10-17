@@ -8,6 +8,7 @@ import { exa_request, tools, formatSearchResult, search_images } from './exa_ai_
 import { infographicTool, infographicToolOpenAI, runInfographicTool } from './generate_images/tool.js';
 import { callOllama, getOllamaModel } from './ollama/detect_ollama.js';
 import { DEFAULT_ORDER, MODELS } from '../providers_list.js';
+import { GenerateImage, isImageGenerationAvailable,imageToolClaude, imageToolOpenAI } from './generate_images/openrouter_gemini_generate_images/generate_image.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -39,6 +40,7 @@ const claudeTools = tools?.map(t => ({
 function getOpenAITools(disabledTools = []) {
     const list = [...(tools ?? [])];
     if (process.env.EXA_API && process.env.ANTHROPIC_API) list.push(infographicToolOpenAI);
+    if (isImageGenerationAvailable()) list.push(imageToolOpenAI);
     return list.filter(t => !disabledTools.includes(t.function.name));
 }
 
@@ -55,6 +57,17 @@ async function executeTool(name, input, ctx) {
         ctx.imageResult = imageResult;
         return formatSearchResult(searchResult);
     }
+
+    if (name === 'generate_image') {
+        try {
+            ctx.generatedImage = await GenerateImage(input.prompt || '');
+            return 'Image generated successfully and attached to the reply. Briefly describe it to the user.';
+        } catch (err) {
+            debug_log_err(`Image generation failed: ${err}`);
+            return 'Image generation failed. Tell the user to try again later.';
+        }
+    }
+
     if (name === 'create_infographic') {
         const result = await runInfographicTool(input, ctx.userId, ctx.language);
         if (result.png) ctx.infographicPng = result.png;
@@ -65,7 +78,7 @@ async function executeTool(name, input, ctx) {
 
 
 function newCtx(userId, language, disabledTools = []) {
-    return { userId, language, disabledTools, usedInternetSearch: false, imageResult: undefined, infographicPng: null };
+    return { userId, language, disabledTools, usedInternetSearch: false, imageResult: undefined, infographicPng: null, generatedImage: null };
 }
 
 function toolOptions(lastRound, ctx) {
@@ -110,7 +123,8 @@ function buildResult(content, model, ctx) {
         model,
         usedInternetSearch: ctx.usedInternetSearch,
         imageResult: ctx.imageResult,
-        infographicPng: ctx.infographicPng
+        infographicPng: ctx.infographicPng,
+        generatedImage: ctx.generatedImage
     };
 }
 
@@ -124,11 +138,13 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
         let searchedImageResult;
         let usedInternetSearch = false;
         let infographicPng = null;
+        let generatedImage = null;
 
         try {
             const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API });
             const allTools = [...(claudeTools ?? [])];
             if (process.env.EXA_API) allTools.push(infographicTool);
+            if (isImageGenerationAvailable()) allTools.push(imageToolClaude);
             const enabledTools = allTools.filter(t => !disabledTools.includes(t.name));
 
             const conversation = [...chat];
@@ -176,6 +192,15 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
                         if (result.png) infographicPng = result.png;
                         toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: result.text });
 
+                    } else if (toolUse.name === 'generate_image') {
+                        try {
+                            generatedImage = await GenerateImage(toolUse.input.prompt || '');
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generated successfully and attached to the reply.' });
+                        } catch (err) {
+                            debug_log_err(`Image generation failed: ${err}`);
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generation failed.', is_error: true });
+                        }
+
                     } else {
                         toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Unknown tool', is_error: true });
                     }
@@ -187,7 +212,7 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
 
             const text = response.content.filter(b => b.type === "text").map(b => b.text).join("");
             console.log(styleText(['greenBright', 'bold'], `ANTHROPIC_API: ${model}`), styleText(['bgYellow', 'bold'], `Input Tokens: ${inputTokens} | Output Tokens: ${outputTokens}`));
-            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult, infographicPng };
+            return { content: text, model, usedInternetSearch, imageResult: searchedImageResult, infographicPng, generatedImage };
         } catch (err) {
             debug_log_err(`Anthropic model ${model} failed, ${err}`);
         }

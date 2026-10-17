@@ -9,7 +9,7 @@ import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 import { sendLogEmbed } from './src/logs_command.js';
 import { startStatusServer } from './src/NevAI_status.js';
-import { detectGenerateImageProvider } from './src/generate_images/openrouter_gemini_generate_images/generate_image.js';
+import { detectGenerateImageProvider, isImageGenerationAvailable } from './src/generate_images/openrouter_gemini_generate_images/generate_image.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
@@ -172,8 +172,11 @@ client.on('messageCreate', async (message) => {
     const searchEnabled = !disabledTools.includes('search_web');
 
     const webSearchRules = 'You have access to a search_web tool. For every specific fact (item name, character name, stat, world information), you MUST indicate which search result it came from (e.g. "according to Result 1..."). NEVER write "Result N" as part of the sentence grammar (e.g. NOT "According to Result 1, the temperature..." - instead: "The temperature will be X°C. CRITICAL: You are NOT allowed to answer questions about game characters, builds, or guides without calling search_web FIRST. When a source lists a specific team composition, reproduce the FULL list of team members exactly as given, not just one or two names. Do not summarize a named team into a vague phrase like "works well with X" - list every character mentioned in that composition. When a fact from a source is conditional or context-specific (e.g. only true in a specific mode, event, or menu), preserve that condition explicitly rather than generalizing it into a universal statement. If you find yourself about to write specific stats, item names, or team compositions without having searched in this exact response, STOP and call search_web instead. If a detail is not explicitly stated in any result, write "not specified in available sources" instead of inventing a name or number. In most cases, ONE search is ENOUGHT. You MUST call it before answering any question about: specific game characters, builds, guides, strategies, current events, prices, or anything you are not ABSOLUTELY certain about. If there is ANY doubt, treat yourself as not knowing the answer and search first - do not rely on your training data for these topics, as it may be outdated or wrong.'
+    
     const NoWebSearchRules = 'You do NOT have internet access. If you are not sure about specific facts (game characters, builds, prices, current events), say so honestly instead of guessing.'
-    const basePrompt = `You are an assistant named ${client.user.username}. Always reply in the same language as the user's latest message. If you are unsure, reply in ${lang.languageName}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. Don't use Discord @everyone and @here on your reply. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>. Reminder: never answer questions about specific games, characters, or builds without searching first.`;
+
+    const basePrompt = `You are an assistant named ${client.user.username}. Always reply in the same language as the user's latest message. If you are unsure, reply in ${lang.languageName}. Today date ${new Date().toDateString()}. Keep your answer brief and under 1200 characters. Don't use Discord @everyone and @here on your reply. You can use these custom server emojis (if exists) when relevant: ${serverEmoji}. Use only Discord-supported Markdown: *italic*, **bold**, ***bold italic***, # headers, \` inline code \`, \`\`\` code blocks \`\`\`, __underline__, ||spoiler||. NEVER use markdown tables (the | character for columns) or HTML tags like <br>.`;
+
     const systemPrompt = `${basePrompt}\n\n ${searchEnabled ? webSearchRules : NoWebSearchRules}\n\n ${guildData.prompt ?? ''}` || `You are a assistand named ${client.user.username}. Brief UNDER 1500 characters. `;
     const messageToSend = [
         { role: 'system', content: systemPrompt },
@@ -266,7 +269,9 @@ client.on('messageCreate', async (message) => {
     const replyOption = { content: response.content, flags: MessageFlags.SuppressEmbeds };
 
 
-     if (response.infographicPng) {
+    if (response.generatedImage) {
+        replyOption.files = [new AttachmentBuilder(response.generatedImage, { name: 'image.png' })];
+    } else if (response.infographicPng) {
         replyOption.files = [new AttachmentBuilder(response.infographicPng, { name: 'infographic.png' })];
     } else if (response.imageResult && response.imageResult.length > 0) {
         try {
@@ -293,11 +298,12 @@ function moveProvider(order, id, direction) {
 
 const TOOL_BUTTONS = [
     { name: 'search_web', labelKey: 'toolSearch', requires: ['EXA_API'] },
-        { name: 'create_infographic', labelKey: 'toolInfographic', requires: ['EXA_API', 'ANTHROPIC_API'], dependsOn: ['search_web'] }
+    { name: 'create_infographic', labelKey: 'toolInfographic', requires: ['EXA_API', 'ANTHROPIC_API'], dependsOn: ['search_web'] },
+    { name: 'generate_image', labelKey: 'toolImage', requires: ['GENERATE_IMAGE_API'], check: isImageGenerationAvailable }
 ];
 
 function isToolAvailable(tool) {
-    return tool.requires.every(key => process.env[key]?.trim());
+      return tool.requires.every(key => process.env[key]?.trim()) && (tool.check?.() ?? true);
 }
 
 function getDisabledTools(toolSettings) {

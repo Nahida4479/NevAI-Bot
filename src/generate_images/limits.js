@@ -1,6 +1,6 @@
-const USER_DAILY_LIMIT = Number(process.env.IMAGE_DAILY_LIMIT_USER) || 3;
+const USER_DAILY_LIMIT = Number(process.env.IMAGE_DAILY_LIMIT_USER) || 5;
 const GLOBAL_DAILY_LIMIT = Number(process.env.IMAGE_DAILY_LIMIT_GLOBAL) || 30;
-const MAX_PARALLEL = Number(process.env.IMAGE_MAX_PARALLEL) || 2;
+const MAX_PARALLEL = Number(process.env.IMAGE_MAX_PARALLEL) || 5;
 let image_running = 0;
 
 let day = today();
