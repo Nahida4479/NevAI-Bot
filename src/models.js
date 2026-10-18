@@ -9,6 +9,7 @@ import { infographicTool, infographicToolOpenAI, runInfographicTool } from './ge
 import { callOllama, getOllamaModel } from './ollama/detect_ollama.js';
 import { DEFAULT_ORDER, MODELS } from '../providers_list.js';
 import { GenerateImage, isImageGenerationAvailable,imageToolClaude, imageToolOpenAI } from './generate_images/openrouter_gemini_generate_images/generate_image.js';
+import { reserveImageSlot, releaseImageSlot } from './generate_images/openrouter_gemini_generate_images/generate_image_limits.js';
 
 let groq = null; 
 if (process.env.GROQ_API) {
@@ -58,14 +59,15 @@ async function executeTool(name, input, ctx) {
     }
 
     if (name === 'generate_image') {
-        try {
-            ctx.generatedImage = await GenerateImage(input.prompt || '', ctx.images);
-            return 'Image generated successfully and attached to the reply. Briefly describe it to the user.';
-        } catch (err) {
-            debug_log_err(`Image generation failed: ${err}`);
-            return 'Image generation failed. Tell the user to try again later.';
-        }
+    try {
+        ctx.generatedImage = await generateImageLimited(input.prompt || '', ctx.images, ctx.userId);
+        return 'Image generated successfully and attached to the reply. Briefly describe it to the user.';
+    } catch (err) {
+        if (IMAGE_LIMIT_MESSAGES[err.message]) return IMAGE_LIMIT_MESSAGES[err.message];
+        debug_log_err(`Image generation failed: ${err}`);
+        return 'Image generation failed. Tell the user to try again later.';
     }
+}
 
     if (name === 'create_infographic') {
         const result = await runInfographicTool(input, ctx.userId, ctx.language);
@@ -204,13 +206,13 @@ async function callAnthropic_claude(messages, { userId = 'unknown', language = '
 
                     } else if (toolUse.name === 'generate_image') {
                         try {
-                            generatedImage = await GenerateImage(toolUse.input.prompt || '', images);
+                            generatedImage = await generateImageLimited(toolUse.input.prompt || '', images, userId);
                             toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generated successfully and attached to the reply.' });
                         } catch (err) {
-                            debug_log_err(`Image generation failed: ${err}`);
-                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Image generation failed.', is_error: true });
-                        }
-
+                            const reason = IMAGE_LIMIT_MESSAGES[err.message];
+                            if (!reason) debug_log_err(`Image generation failed: ${err}`);
+                            toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: reason ?? 'Image generation failed.', is_error: !reason });
+                        } 
                     } else {
                         toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: 'Unknown tool', is_error: true });
                     }
@@ -399,6 +401,27 @@ const PROVIDERS = {
         isAvailable: async () => !!process.env.GEMINI_API?.trim(),
         call: callGemini
     }
+};
+
+
+async function generateImageLimited(prompt, images, userId) {
+    const denied = reserveImageSlot(userId);
+    if (denied) throw new Error(denied);
+
+    let ok = false;
+    try {
+        const png = await GenerateImage(prompt, images);
+        ok = true;
+        return png;
+    } finally {
+        releaseImageSlot(userId, ok);
+    }
+}
+
+const IMAGE_LIMIT_MESSAGES = {
+    IMAGE_LIMIT_PARALLEL: 'Too many images are being generated right now. Tell the user to try again in a moment.',
+    IMAGE_LIMIT_GLOBAL: 'The daily image generation limit of this bot has been reached. Tell the user to try again tomorrow.',
+    IMAGE_LIMIT_USER: 'This user has reached the daily image generation limit. Tell them to try again tomorrow.'
 };
 
 export { getAiResponse, anthropic_image_model, getProviderStatus };

@@ -1,6 +1,15 @@
-const USER_DAILY_LIMIT = Number(process.env.IMAGE_DAILY_LIMIT_USER) || 5;
-const GLOBAL_DAILY_LIMIT = Number(process.env.IMAGE_DAILY_LIMIT_GLOBAL) || 30;
-const MAX_PARALLEL = Number(process.env.IMAGE_MAX_PARALLEL) || 5;
+import { debug_log_warn } from "../../debug/debug.js";
+
+const INFOGRAPHIC_LIMITS = {
+    user: readLimit('INFOGRAPHIC_DAILY_LIMIT_USER', 5),
+    global: readLimit('INFOGRAPHIC_DAILY_LIMIT_GLOBAL', 30),
+    parallel: readLimit('INFOGRAPHIC_MAX_PARALLEL', 5)
+};
+
+const USER_DAILY_LIMIT = INFOGRAPHIC_LIMITS.user.value;
+const GLOBAL_DAILY_LIMIT = INFOGRAPHIC_LIMITS.global.value;
+const MAX_PARALLEL = INFOGRAPHIC_LIMITS.parallel.value;
+
 let image_running = 0;
 
 let day = today();
@@ -9,6 +18,18 @@ const perUser = new Map();
 
 function today() {
     return new Date().toISOString().slice(0, 10);
+}
+
+function readLimit(name, fallback) {
+    const raw = process.env[name]?.trim();
+    if (!raw) return { value: fallback, source: 'default' };
+
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 0) {
+        debug_log_warn(`${name}="${raw}" is not a valid number, using default ${fallback}`);
+        return { value: fallback, source: 'default (invalid value)' };
+    }
+    return { value, source: '.env' };
 }
 
 
@@ -51,7 +72,7 @@ function releaseImageSlot(userId, success) {
 }
 
 
-export { reserveImageSlot, releaseImageSlot }
+export { reserveImageSlot, releaseImageSlot, readLimit, INFOGRAPHIC_LIMITS as infographicLimits };
 
 
 
