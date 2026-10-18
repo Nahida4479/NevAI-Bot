@@ -9,7 +9,9 @@ import { getEmoji } from './src/exportEmoji.js';
 import { ensureEmojis } from './src/uploadEmoji.js';
 import { sendLogEmbed } from './src/logs_command.js';
 import { startStatusServer } from './src/NevAI_status.js';
+import { imageLimits } from './src/generate_images/openrouter_gemini_generate_images/generate_image_limits.js';
 import { detectGenerateImageProvider, isImageGenerationAvailable } from './src/generate_images/openrouter_gemini_generate_images/generate_image.js';
+import { infographicLimits } from './src/generate_images/limits.js';
 // Debug
 import { debugging, debug_log_err, debug_log_success, debug_log_warn } from './debug/debug.js';
 import { styleText } from 'node:util';
@@ -39,6 +41,7 @@ if (process.env.GENERATE_IMAGE_API && !detectGenerateImageProvider()) {
     debug_log_warn('GENERATE_IMAGE_API not detected - image generation is not available.')
 }
 
+
 if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_API && !process.env.OPENROUTER_API && !process.env.ANTHROPIC_API && !detectedOllama ) {
     const err_message = 'No AI API found. Add at least one API (Groq, Gemini, HackClub, OpenRouter, Anthropic) or run Ollama'
     debug_log_err(err_message)
@@ -49,6 +52,17 @@ if (!process.env.GROQ_API && !process.env.GEMINI_API && !process.env.HACKCLUB_AP
     console.log(styleText(['blue', 'bold'], success_message))
 }
 
+const fmt = l => l.value === 0 ? 'no limit' : `${l.value} (${l.source})`;
+
+if (isImageGenerationAvailable()) {
+    console.log(styleText(['cyan', 'bold'],
+        `Image generation limits: user ${fmt(imageLimits.user)}, global ${fmt(imageLimits.global)}, parallel ${fmt(imageLimits.parallel)}`));
+}
+
+if (process.env.EXA_API && process.env.ANTHROPIC_API) {
+    console.log(styleText(['cyan', 'bold'],
+        `Infographic limits: user ${fmt(infographicLimits.user)}, global ${fmt(infographicLimits.global)}, parallel ${fmt(infographicLimits.parallel)}`));
+}
 
 const client = new Client({
     intents: [
