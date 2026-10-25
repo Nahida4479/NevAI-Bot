@@ -1,3 +1,5 @@
+import { styleText } from 'node:util';
+
 async function generateViaGoogleApi(prompt, images, model) {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',

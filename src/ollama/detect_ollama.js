@@ -10,7 +10,7 @@ async function detectOllama() {
     const baseUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
     try {
         const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(2000) });
-        if (!res.ok) return null; 
+        if (!res.ok) return null;   
         const data = await res.json();
         const names = data.models.map(m => m.name).filter(name => !name.includes('embed'));
         console.log(styleText(['greenBright', 'bold'], 'Ollama models detected:'), styleText(['bgGreen', 'bold'], `${names}`));
