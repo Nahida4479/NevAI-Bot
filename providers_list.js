@@ -15,7 +15,7 @@ export const MODELS = {
 
     // Generate images (paid api)
      image: {
-        openrouter: 'openai/gpt-image-2.5-sunburst', // Paid gemini-3.1-flash-lite-image
+        openrouter: 'google/nano-banana-2.1', // Paid gemini-3.1-flash-lite-image
         google: 'gemini-3.1-flash-lite-image', // gemini-3.1-flash-lite-image
     },
 };
