@@ -1,6 +1,7 @@
 import { styleText } from 'node:util';
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_IMAGES_URL = 'https://openrouter.ai/api/v1/images';
 
 function buildContent(prompt, images, allowPlainText) {
     if (allowPlainText && !images.length) return prompt;
@@ -16,6 +17,7 @@ function buildContent(prompt, images, allowPlainText) {
 const REQUEST_VARIANTS = [
     {
         name: 'gemini',
+        url: OPENROUTER_CHAT_URL,
         body: (prompt, images, model) => ({
             model,
             modalities: ['image', 'text'],
@@ -24,10 +26,16 @@ const REQUEST_VARIANTS = [
     },
     {
         name: 'openai',
+        url: OPENROUTER_IMAGES_URL,
         body: (prompt, images, model) => ({
             model,
-            modalities: ['image'],
-            messages: [{ role: 'user', content: buildContent(prompt, images, true) }]
+            prompt,
+            ...(images.length && {
+                input_references: images.map(img => ({
+                    type: 'image_url',
+                    image_url: { url: `data:${img.mimeType};base64,${img.base64}` }
+                }))
+            })
         })
     }
 ];
@@ -62,8 +70,8 @@ async function urlToBuffer(url) {
     return Buffer.from(await res.arrayBuffer());
 }
 
-async function requestImage(body) {
-    const res = await fetch(OPENROUTER_URL, {
+async function requestImage(url, body) {
+    const res = await fetch(url, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${process.env.GENERATE_IMAGE_API}`,
@@ -79,9 +87,12 @@ async function requestImage(body) {
     const data = await res.json();
     if (data.error) throw new Error(`OpenRouter image error: ${data.error.message ?? JSON.stringify(data.error)}`);
 
-    const url = findImageUrl(data.choices?.[0]?.message);
-    if (!url) throw new Error('No image returned');
-    return urlToBuffer(url);
+    const b64 = data.data?.[0]?.b64_json;
+    if (b64) return Buffer.from(b64, 'base64');
+
+    const imageUrl = data.data?.[0]?.url ?? findImageUrl(data.choices?.[0]?.message);
+    if (!imageUrl) throw new Error('No image returned');
+    return urlToBuffer(imageUrl);
 }
 
 async function generateViaOpenRouter(prompt, images, model) {
@@ -89,7 +100,7 @@ async function generateViaOpenRouter(prompt, images, model) {
 
     for (const variant of REQUEST_VARIANTS) {
         try {
-            const buffer = await requestImage(variant.body(prompt, images, model));
+            const buffer = await requestImage(variant.url, variant.body(prompt, images, model));
             console.log(styleText(['greenBright', 'bold'], `OPENROUTER_IMAGE_API (${variant.name}): ${model}`));
             return buffer;
         } catch (err) {
