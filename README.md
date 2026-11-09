@@ -82,7 +82,7 @@ Claude Haiku 5.5
 
 **OpenRouter**
 ```yaml
-google/gemini-3.1-flash-lite-image
+openai/gpt-image-2
 ```
 
 **Gemini**
